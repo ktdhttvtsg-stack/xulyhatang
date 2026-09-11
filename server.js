@@ -508,6 +508,44 @@ app.get('/api/export/excel', (req, res) => {
   }
 });
 
+// Baohong Service APIs
+const baohongService = require('./services/baohongService');
+
+// API: Get Baohong Stats
+app.get('/api/baohong/stats', async (req, res) => {
+  try {
+    const force = req.query.force === 'true';
+    const stats = await baohongService.getStats(force);
+    res.json({ success: true, data: stats });
+  } catch (err) {
+    console.error('Error getting baohong stats:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// API: Get Baohong Heatmap points
+app.get('/api/baohong/heatmap', async (req, res) => {
+  try {
+    const type = req.query.type || 'mnv'; // 'mnv' or 'all'
+    const points = await baohongService.getHeatmap(type);
+    res.json({ success: true, count: points.length, type, data: points });
+  } catch (err) {
+    console.error('Error getting heatmap:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// API: Refresh Baohong Data
+app.post('/api/baohong/refresh', async (req, res) => {
+  try {
+    const stats = await baohongService.getStats(true);
+    res.json({ success: true, message: 'Đã làm mới dữ liệu báo hỏng thành công', data: stats });
+  } catch (err) {
+    console.error('Error refreshing baohong data:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // Fallback to SPA index.html
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));

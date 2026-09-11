@@ -948,5 +948,341 @@ body {
   }
   .modal-content {
     max-height: 96vh;
+    padding: 1.25rem;
   }
+}
+
+/* ================= BAOHONG INCIDENT ANALYTICS STYLES ================= */
+.baohong-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 0.5rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.baohong-header-card {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: #fff;
+  padding: 1.5rem 1.75rem;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.25);
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.baohong-header-left h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.baohong-header-left p {
+  color: #cbd5e1;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.baohong-header-left strong {
+  color: #38bdf8;
+}
+
+.baohong-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.baohong-header-actions .btn-outline {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.baohong-header-actions .btn-outline:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: #fff;
+}
+
+.baohong-kpi-grid .stat-subtext {
+  font-size: 0.725rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+/* Heatmap Section */
+.baohong-heatmap-section {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.heatmap-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  background: #fafafa;
+}
+
+.heatmap-title-group h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.2rem;
+}
+
+.heatmap-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.heatmap-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.heatmap-filter-group {
+  display: inline-flex;
+  background: #e2e8f0;
+  padding: 3px;
+  border-radius: var(--radius-md);
+  gap: 4px;
+}
+
+.btn-filter-hm {
+  background: transparent;
+  border: none;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-filter-hm.active {
+  background: #fff;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.heatmap-jump-group {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn-outline-chip {
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35rem 0.65rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-outline-chip:hover {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
+.heatmap-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+#baohongHeatmap {
+  width: 100%;
+  height: 540px;
+  z-index: 1;
+}
+
+.heatmap-overlay-panel {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 220px;
+}
+
+.heatmap-legend-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #475569;
+  gap: 0.5rem;
+}
+
+.heatmap-gradient-scale {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(to right, blue, cyan, lime, yellow, red);
+}
+
+.heatmap-slider-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.heatmap-slider-control label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #475569;
+  display: flex;
+  justify-content: space-between;
+}
+
+.heatmap-slider-control input[type="range"] {
+  width: 100%;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+/* Tables Section */
+.baohong-tables-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.baohong-card {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.card-header-clean {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fafbfc;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.card-header-clean .clean-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.card-header-clean h4 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.badge-info { background: #e0f2fe; color: #0369a1; }
+.badge-warning { background: #fef3c7; color: #92400e; }
+.badge-danger { background: #fee2e2; color: #b91c1c; }
+.badge-primary { background: #eff6ff; color: #1d4ed8; }
+
+.baohong-subgrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.baohong-card-span-2 {
+  grid-column: span 2;
+}
+
+@media (max-width: 1024px) {
+  .baohong-subgrid {
+    grid-template-columns: 1fr;
+  }
+  .baohong-card-span-2 {
+    grid-column: span 1;
+  }
+}
+
+/* Rank Medals & Numbers */
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.rank-badge-1 { background: #fef08a; color: #854d0e; border: 1px solid #facc15; box-shadow: 0 0 6px rgba(250, 204, 21, 0.4); }
+.rank-badge-2 { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+.rank-badge-3 { background: #ffedd5; color: #9a3412; border: 1px solid #fdba74; }
+.rank-badge-other { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
+
+/* Mini Progress Bar */
+.mini-progress {
+  width: 100%;
+  height: 6px;
+  background: #f1f5f9;
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.mini-progress-bar {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.4s ease;
+}
+
+.progress-mnv {
+  background: linear-gradient(to right, #f59e0b, #ef4444);
+}
+
+.progress-blue {
+  background: linear-gradient(to right, #60a5fa, #2563eb);
 }

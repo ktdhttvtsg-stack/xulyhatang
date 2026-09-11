@@ -335,18 +335,29 @@ function resetFilters() {
   loadItems();
 }
 
-// ================= VIEW SWITCHER (LIST / MAP) =================
+// ================= VIEW SWITCHER (LIST / MAP / BAOHONG) =================
 function switchView(viewName) {
   state.activeView = viewName;
   const listContainer = document.getElementById('listViewContainer');
   const mapContainer = document.getElementById('mapViewContainer');
+  const baohongContainer = document.getElementById('baohongViewContainer');
+  const infraStatsGrid = document.getElementById('infraStatsGrid');
+  const infraActionCard = document.getElementById('infraActionCard');
+
   const listTab = document.getElementById('tabListViewBtn');
   const mapTab = document.getElementById('tabMapViewBtn');
+  const baohongTab = document.getElementById('tabBaohongViewBtn');
+
+  // Reset all tabs
+  [listTab, mapTab, baohongTab].forEach(btn => btn && btn.classList.remove('active'));
 
   if (viewName === 'map') {
     listContainer.style.display = 'none';
+    if (baohongContainer) baohongContainer.style.display = 'none';
+    if (infraStatsGrid) infraStatsGrid.style.display = 'grid';
+    if (infraActionCard) infraActionCard.style.display = 'block';
+
     mapContainer.classList.add('active');
-    listTab.classList.remove('active');
     mapTab.classList.add('active');
     
     // Invalidate map size so tiles render properly
@@ -356,10 +367,29 @@ function switchView(viewName) {
         fitOverallMapBounds();
       }
     }, 100);
-  } else {
+  } else if (viewName === 'baohong') {
+    listContainer.style.display = 'none';
     mapContainer.classList.remove('active');
+    if (infraStatsGrid) infraStatsGrid.style.display = 'none';
+    if (infraActionCard) infraActionCard.style.display = 'none';
+
+    if (baohongContainer) baohongContainer.style.display = 'flex';
+    if (baohongTab) baohongTab.classList.add('active');
+
+    loadBaohongData();
+    setTimeout(() => {
+      if (state.baohongHeatmapMap) {
+        state.baohongHeatmapMap.invalidateSize();
+      }
+    }, 150);
+  } else {
+    // Default 'list'
+    mapContainer.classList.remove('active');
+    if (baohongContainer) baohongContainer.style.display = 'none';
+    if (infraStatsGrid) infraStatsGrid.style.display = 'grid';
+    if (infraActionCard) infraActionCard.style.display = 'block';
+
     listContainer.style.display = 'block';
-    mapTab.classList.remove('active');
     listTab.classList.add('active');
   }
 }
@@ -1251,3 +1281,300 @@ async function syncAllToGoogleSheet() {
     }
   }
 }
+
+// ================= PHÂN TÍCH BÁO HỎNG & BẢN ĐỒ NHIỆT MNV =================
+let ttvtDataCache = [];
+
+async function loadBaohongData(force = false) {
+  try {
+    const btnRefresh = document.getElementById('btnRefreshBaohong');
+    if (btnRefresh) {
+      btnRefresh.disabled = true;
+      btnRefresh.innerHTML = '⏳ Đang nạp dữ liệu...';
+    }
+
+    const res = await fetch(`/api/baohong/stats${force ? '?force=true' : ''}`);
+    const data = await res.json();
+    if (!data.success) {
+      throw new Error(data.message || 'Không tải được dữ liệu thống kê');
+    }
+
+    const stats = data.data;
+    state.baohongStats = stats;
+
+    // Render KPI Cards
+    document.getElementById('bhTotalTickets').textContent = Number(stats.totalRows).toLocaleString('vi-VN');
+    document.getElementById('bhMnvTickets').textContent = Number(stats.mnvCount).toLocaleString('vi-VN');
+    document.getElementById('bhMnvRate').textContent = stats.mnvRate + '%';
+    document.getElementById('bhGpsPoints').textContent = Number(stats.validCoordsCount).toLocaleString('vi-VN');
+
+    // 1. Render TTVT Table
+    ttvtDataCache = stats.ttvtList || [];
+    renderTtvtTable(ttvtDataCache);
+
+    // 2. Render Top 10 TOVT Table
+    renderTovtTable(stats.top10Tovt || []);
+
+    // 3. Render Top 10 KV Table
+    renderKvTable(stats.top10Kv || []);
+
+    // 4. Render Top 20 Kyhieu Table
+    renderKyhieuTable(stats.top20Kyhieu || []);
+
+    // 5. Init and Load Heatmap
+    initBaohongHeatmap();
+    await loadHeatmapLayer(state.currentHeatType || 'mnv');
+
+    if (force) {
+      showToast('Đã làm mới dữ liệu báo hỏng thành công', 'success');
+    }
+  } catch (err) {
+    console.error('Lỗi nạp dữ liệu báo hỏng:', err);
+    showToast('Lỗi nạp dữ liệu báo hỏng: ' + err.message, 'error');
+  } finally {
+    const btnRefresh = document.getElementById('btnRefreshBaohong');
+    if (btnRefresh) {
+      btnRefresh.disabled = false;
+      btnRefresh.innerHTML = '🔄 Làm mới số liệu';
+    }
+  }
+}
+
+function renderTtvtTable(list) {
+  const tbody = document.getElementById('ttvtTableBody');
+  if (!tbody) return;
+  if (!list || list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 1.5rem;">Không tìm thấy dữ liệu TTVT phù hợp</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map((item, idx) => {
+    const rateNum = parseFloat(item.rate) || 0;
+    return `
+      <tr>
+        <td style="text-align: center; font-weight: 600; color: #64748b;">${idx + 1}</td>
+        <td style="font-weight: 600; color: #1e293b;">${escapeHtml(item.name)}</td>
+        <td style="text-align: right; font-weight: 600;">${Number(item.total).toLocaleString('vi-VN')}</td>
+        <td style="text-align: right; font-weight: 700; color: #dc2626;">${Number(item.mnv).toLocaleString('vi-VN')}</td>
+        <td style="text-align: right; font-weight: 700; color: ${rateNum > 15 ? '#dc2626' : rateNum > 10 ? '#d97706' : '#2563eb'};">
+          ${item.rate}%
+        </td>
+        <td>
+          <div class="mini-progress" title="Tỷ lệ MNV: ${item.rate}%">
+            <div class="mini-progress-bar progress-mnv" style="width: ${Math.min(rateNum * 3, 100)}%;"></div>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function filterTtvtTable(query) {
+  if (!query) {
+    renderTtvtTable(ttvtDataCache);
+    return;
+  }
+  const q = query.toLowerCase().trim();
+  const filtered = ttvtDataCache.filter(item => item.name.toLowerCase().includes(q));
+  renderTtvtTable(filtered);
+}
+
+function renderTovtTable(list) {
+  const tbody = document.getElementById('tovtTableBody');
+  if (!tbody) return;
+  if (!list || list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 1.5rem;">Không có dữ liệu</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map((item, idx) => {
+    const rank = idx + 1;
+    let rankBadgeClass = 'rank-badge-other';
+    if (rank === 1) rankBadgeClass = 'rank-badge-1';
+    else if (rank === 2) rankBadgeClass = 'rank-badge-2';
+    else if (rank === 3) rankBadgeClass = 'rank-badge-3';
+
+    return `
+      <tr>
+        <td style="text-align: center;">
+          <span class="rank-badge ${rankBadgeClass}">${rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank}</span>
+        </td>
+        <td style="font-weight: 600; color: #1e293b;">${escapeHtml(item.tovt)}</td>
+        <td style="text-align: right; font-weight: 700; color: #dc2626;">${Number(item.count).toLocaleString('vi-VN')}</td>
+        <td style="text-align: right; color: #64748b; font-size: 0.825rem; font-weight: 600;">${item.percent}%</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderKvTable(list) {
+  const tbody = document.getElementById('kvTableBody');
+  if (!tbody) return;
+  if (!list || list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 1.5rem;">Không có dữ liệu</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map((item, idx) => {
+    const rank = idx + 1;
+    let rankBadgeClass = 'rank-badge-other';
+    if (rank === 1) rankBadgeClass = 'rank-badge-1';
+    else if (rank === 2) rankBadgeClass = 'rank-badge-2';
+    else if (rank === 3) rankBadgeClass = 'rank-badge-3';
+
+    return `
+      <tr>
+        <td style="text-align: center;">
+          <span class="rank-badge ${rankBadgeClass}">${rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank}</span>
+        </td>
+        <td style="font-weight: 700; color: #0284c7; font-family: monospace;">${escapeHtml(item.ma_kv)}</td>
+        <td style="text-align: right; font-weight: 700; color: #dc2626;">${Number(item.count).toLocaleString('vi-VN')}</td>
+        <td style="text-align: right; color: #64748b; font-size: 0.825rem; font-weight: 600;">${item.percent}%</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderKyhieuTable(list) {
+  const tbody = document.getElementById('kyhieuTableBody');
+  if (!tbody) return;
+  if (!list || list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 1.5rem;">Không có dữ liệu</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map((item, idx) => {
+    const rank = idx + 1;
+    let rankBadgeClass = 'rank-badge-other';
+    if (rank === 1) rankBadgeClass = 'rank-badge-1';
+    else if (rank === 2) rankBadgeClass = 'rank-badge-2';
+    else if (rank === 3) rankBadgeClass = 'rank-badge-3';
+
+    const rateNum = parseFloat(item.rate) || 0;
+    return `
+      <tr>
+        <td style="text-align: center;">
+          <span class="rank-badge ${rankBadgeClass}">${rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank}</span>
+        </td>
+        <td style="font-weight: 600; color: #1e293b; font-family: monospace; font-size: 0.825rem;">
+          ${escapeHtml(item.kyhieu)}
+        </td>
+        <td style="text-align: right; font-weight: 600;">${Number(item.total).toLocaleString('vi-VN')}</td>
+        <td style="text-align: right; font-weight: 700; color: #dc2626;">${Number(item.mnv).toLocaleString('vi-VN')}</td>
+        <td style="text-align: right; font-weight: 600; color: ${rateNum > 50 ? '#dc2626' : '#2563eb'};">
+          ${item.rate}%
+        </td>
+        <td>
+          <div class="mini-progress" title="MNV: ${item.rate}%">
+            <div class="mini-progress-bar progress-mnv" style="width: ${rateNum}%;"></div>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// ================= LEAFLET HEATMAP LOGIC =================
+function initBaohongHeatmap() {
+  if (state.baohongHeatmapMap) return;
+
+  const mapEl = document.getElementById('baohongHeatmap');
+  if (!mapEl) return;
+
+  // Center around Ho Chi Minh / Southeastern Vietnam
+  state.baohongHeatmapMap = L.map('baohongHeatmap').setView([10.7769, 106.6953], 10);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(state.baohongHeatmapMap);
+}
+
+async function loadHeatmapLayer(type = 'mnv') {
+  if (!state.baohongHeatmapMap) {
+    initBaohongHeatmap();
+  }
+
+  state.currentHeatType = type;
+
+  // Update button states
+  const btnMnv = document.getElementById('btnHmFilterMnv');
+  const btnAll = document.getElementById('btnHmFilterAll');
+  if (btnMnv && btnAll) {
+    if (type === 'mnv') {
+      btnMnv.classList.add('active');
+      btnAll.classList.remove('active');
+    } else {
+      btnAll.classList.add('active');
+      btnMnv.classList.remove('active');
+    }
+  }
+
+  try {
+    const res = await fetch(`/api/baohong/heatmap?type=${type}`);
+    const result = await res.json();
+    if (!result.success) throw new Error(result.message);
+
+    const points = result.data || [];
+
+    if (state.baohongHeatLayer) {
+      state.baohongHeatmapMap.removeLayer(state.baohongHeatLayer);
+    }
+
+    const radius = state.heatRadius || 25;
+
+    // Check if L.heatLayer exists
+    if (typeof L.heatLayer === 'function') {
+      state.baohongHeatLayer = L.heatLayer(points, {
+        radius: radius,
+        blur: Math.round(radius * 0.6),
+        maxZoom: 16,
+        max: 1.0,
+        gradient: {
+          0.2: '#3b82f6',
+          0.4: '#06b6d4',
+          0.6: '#10b981',
+          0.8: '#f59e0b',
+          1.0: '#ef4444'
+        }
+      }).addTo(state.baohongHeatmapMap);
+    } else {
+      console.warn('L.heatLayer is not loaded');
+    }
+  } catch (err) {
+    console.error('Lỗi tải dữ liệu heatmap:', err);
+    showToast('Lỗi tải dữ liệu bản đồ nhiệt: ' + err.message, 'error');
+  }
+}
+
+function switchHeatmapType(type) {
+  loadHeatmapLayer(type);
+}
+
+function updateHeatmapRadius(val) {
+  const radius = parseInt(val, 10);
+  state.heatRadius = radius;
+  const label = document.getElementById('radiusValue');
+  if (label) label.textContent = radius;
+
+  if (state.baohongHeatLayer) {
+    state.baohongHeatLayer.setOptions({
+      radius: radius,
+      blur: Math.round(radius * 0.6)
+    });
+  }
+}
+
+function jumpHeatmap(loc) {
+  if (!state.baohongHeatmapMap) return;
+  if (loc === 'hcm') {
+    state.baohongHeatmapMap.setView([10.8231, 106.6297], 11);
+  } else if (loc === 'bd') {
+    state.baohongHeatmapMap.setView([11.1500, 106.6500], 11);
+  } else if (loc === 'vt') {
+    state.baohongHeatmapMap.setView([10.5000, 107.2500], 10);
+  } else {
+    state.baohongHeatmapMap.setView([10.7769, 106.6953], 9);
+  }
+}
+

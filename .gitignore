@@ -1,3 +1,6 @@
 node_modules/
 .DS_Store
 *.log
+baohong_sample.csv
+baohong_all.xlsx
+test_aggregate.js

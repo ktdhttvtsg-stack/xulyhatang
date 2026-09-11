@@ -1,0 +1,462 @@
+{
+  "totalRows": 34315,
+  "mnvCount": 3281,
+  "mnvRate": "9.6",
+  "validCoordsCount": 28642,
+  "validMNVCoordsCount": 3245,
+  "ttvtList": [
+    {
+      "name": "Trung Tâm Viễn thông Thủ Đức",
+      "total": 1858,
+      "mnv": 203,
+      "rate": "10.9"
+    },
+    {
+      "name": "Trung tâm Viễn thông Đông Hưng Thuận",
+      "total": 1517,
+      "mnv": 173,
+      "rate": "11.4"
+    },
+    {
+      "name": "Trung tâm Viễn thông An Khánh",
+      "total": 1765,
+      "mnv": 169,
+      "rate": "9.6"
+    },
+    {
+      "name": "Trung tâm Viễn thông An Lạc",
+      "total": 1559,
+      "mnv": 163,
+      "rate": "10.5"
+    },
+    {
+      "name": "Trung tâm Viễn thông Thuận An",
+      "total": 803,
+      "mnv": 162,
+      "rate": "20.2"
+    },
+    {
+      "name": "Trung tâm Viễn thông Bình Chánh",
+      "total": 1216,
+      "mnv": 149,
+      "rate": "12.3"
+    },
+    {
+      "name": "Trung tâm Viễn thông Tân Uyên",
+      "total": 1036,
+      "mnv": 134,
+      "rate": "12.9"
+    },
+    {
+      "name": "Trung Tâm Viễn thông Chợ Lớn",
+      "total": 1578,
+      "mnv": 132,
+      "rate": "8.4"
+    },
+    {
+      "name": "Trung tâm Viễn thông Xuyên Mộc",
+      "total": 395,
+      "mnv": 124,
+      "rate": "31.4"
+    },
+    {
+      "name": "Trung tâm Viễn thông Nhà Bè",
+      "total": 1338,
+      "mnv": 123,
+      "rate": "9.2"
+    },
+    {
+      "name": "Trung tâm Viễn thông Bến Cát",
+      "total": 1307,
+      "mnv": 123,
+      "rate": "9.4"
+    },
+    {
+      "name": "Trung tâm Viễn thông Dĩ An",
+      "total": 939,
+      "mnv": 120,
+      "rate": "12.8"
+    },
+    {
+      "name": "Trung tâm Viễn thông Phú Mỹ",
+      "total": 562,
+      "mnv": 120,
+      "rate": "21.4"
+    },
+    {
+      "name": "Trung tâm Viễn thông Thủ Dầu Một",
+      "total": 740,
+      "mnv": 117,
+      "rate": "15.8"
+    },
+    {
+      "name": "Trung Tâm Viễn thông Củ Chi",
+      "total": 953,
+      "mnv": 111,
+      "rate": "11.6"
+    },
+    {
+      "name": "Trung tâm Viễn thông Dầu Tiếng",
+      "total": 739,
+      "mnv": 111,
+      "rate": "15.0"
+    },
+    {
+      "name": "Trung tâm Viễn thông Đất Đỏ",
+      "total": 339,
+      "mnv": 106,
+      "rate": "31.3"
+    },
+    {
+      "name": "Trung Tâm Viễn thông Hóc Môn",
+      "total": 1397,
+      "mnv": 102,
+      "rate": "7.3"
+    },
+    {
+      "name": "Trung tâm Viễn thông Bà Rịa",
+      "total": 537,
+      "mnv": 102,
+      "rate": "19.0"
+    },
+    {
+      "name": "Trung tâm Viễn thông Châu Đức",
+      "total": 281,
+      "mnv": 102,
+      "rate": "36.3"
+    },
+    {
+      "name": "Trung tâm Viễn thông Tân An Hội",
+      "total": 737,
+      "mnv": 96,
+      "rate": "13.0"
+    },
+    {
+      "name": "Trung tâm Viễn thông Phú Nhuận",
+      "total": 1264,
+      "mnv": 81,
+      "rate": "6.4"
+    },
+    {
+      "name": "Trung tâm Viễn thông An Đông",
+      "total": 1262,
+      "mnv": 80,
+      "rate": "6.3"
+    },
+    {
+      "name": "Trung tâm Viễn thông Vũng Tàu",
+      "total": 463,
+      "mnv": 76,
+      "rate": "16.4"
+    },
+    {
+      "name": "Trung Tâm Viễn thông Gia Định",
+      "total": 1362,
+      "mnv": 70,
+      "rate": "5.1"
+    },
+    {
+      "name": "Trung Tâm Viễn thông Tân Bình",
+      "total": 1356,
+      "mnv": 68,
+      "rate": "5.0"
+    },
+    {
+      "name": "Trung tâm Viễn thông Phú Giáo",
+      "total": 504,
+      "mnv": 67,
+      "rate": "13.3"
+    },
+    {
+      "name": "Trung Tâm Viễn thông Sài Gòn",
+      "total": 734,
+      "mnv": 52,
+      "rate": "7.1"
+    },
+    {
+      "name": "Trung Tâm Viễn thông Nam Sài Gòn",
+      "total": 1310,
+      "mnv": 44,
+      "rate": "3.4"
+    },
+    {
+      "name": "Chưa xác định",
+      "total": 4451,
+      "mnv": 1,
+      "rate": "0.0"
+    },
+    {
+      "name": "TT thuê bao VNTT",
+      "total": 13,
+      "mnv": 0,
+      "rate": "0.0"
+    }
+  ],
+  "top10Tovt": [
+    {
+      "rank": 1,
+      "tovt": "Tổ Kỹ thuật Địa bàn An Hội Đông",
+      "count": 86,
+      "percent": "2.6"
+    },
+    {
+      "rank": 2,
+      "tovt": "Tổ Kỹ thuật Địa bàn Kim Long",
+      "count": 78,
+      "percent": "2.4"
+    },
+    {
+      "rank": 3,
+      "tovt": "Tổ Kỹ thuật Địa bàn Tân Thành",
+      "count": 70,
+      "percent": "2.1"
+    },
+    {
+      "rank": 4,
+      "tovt": "Tổ Kỹ thuật Địa bàn Hiệp Bình 1",
+      "count": 61,
+      "percent": "1.9"
+    },
+    {
+      "rank": 5,
+      "tovt": "Tổ Kỹ thuật Địa bàn Hòa Hội",
+      "count": 54,
+      "percent": "1.6"
+    },
+    {
+      "rank": 6,
+      "tovt": "Tổ Kỹ thuật Địa bàn Thuận An",
+      "count": 49,
+      "percent": "1.5"
+    },
+    {
+      "rank": 7,
+      "tovt": "Tổ Kỹ thuật Địa bàn Phước Long",
+      "count": 49,
+      "percent": "1.5"
+    },
+    {
+      "rank": 8,
+      "tovt": "Tổ Kỹ thuật Địa bàn Long Trường",
+      "count": 47,
+      "percent": "1.4"
+    },
+    {
+      "rank": 9,
+      "tovt": "Tổ Kỹ thuật Địa bàn Tân Đông Hiệp",
+      "count": 41,
+      "percent": "1.2"
+    },
+    {
+      "rank": 10,
+      "tovt": "Tổ Kỹ thuật Địa bàn Bình Tân",
+      "count": 41,
+      "percent": "1.2"
+    }
+  ],
+  "top10Kv": [
+    {
+      "rank": 1,
+      "ma_kv": "DHT008",
+      "count": 50,
+      "percent": "1.5"
+    },
+    {
+      "rank": 2,
+      "ma_kv": "CDC 114",
+      "count": 46,
+      "percent": "1.4"
+    },
+    {
+      "rank": 3,
+      "ma_kv": "TDU005",
+      "count": 35,
+      "percent": "1.1"
+    },
+    {
+      "rank": 4,
+      "ma_kv": "DAN068",
+      "count": 23,
+      "percent": "0.7"
+    },
+    {
+      "rank": 5,
+      "ma_kv": "BCH048",
+      "count": 23,
+      "percent": "0.7"
+    },
+    {
+      "rank": 6,
+      "ma_kv": "CLO026",
+      "count": 23,
+      "percent": "0.7"
+    },
+    {
+      "rank": 7,
+      "ma_kv": "TAN071",
+      "count": 22,
+      "percent": "0.7"
+    },
+    {
+      "rank": 8,
+      "ma_kv": "ALA031",
+      "count": 22,
+      "percent": "0.7"
+    },
+    {
+      "rank": 9,
+      "ma_kv": "TDU049",
+      "count": 20,
+      "percent": "0.6"
+    },
+    {
+      "rank": 10,
+      "ma_kv": "AKH048",
+      "count": 20,
+      "percent": "0.6"
+    }
+  ],
+  "top20Kyhieu": [
+    {
+      "rank": 1,
+      "kyhieu": "S2_MECF0101/S01",
+      "total": 42,
+      "mnv": 0,
+      "rate": "0.0"
+    },
+    {
+      "rank": 2,
+      "kyhieu": "WGTF010101000001",
+      "total": 38,
+      "mnv": 0,
+      "rate": "0.0"
+    },
+    {
+      "rank": 3,
+      "kyhieu": "S2-O-LUXF010000000002/S03",
+      "total": 23,
+      "mnv": 0,
+      "rate": "0.0"
+    },
+    {
+      "rank": 4,
+      "kyhieu": "LTMF130000000015",
+      "total": 21,
+      "mnv": 0,
+      "rate": "0.0"
+    },
+    {
+      "rank": 5,
+      "kyhieu": "LTMF510000000001/S01",
+      "total": 19,
+      "mnv": 0,
+      "rate": "0.0"
+    },
+    {
+      "rank": 6,
+      "kyhieu": "T-TAN-BUG-TU",
+      "total": 18,
+      "mnv": 11,
+      "rate": "61.1"
+    },
+    {
+      "rank": 7,
+      "kyhieu": "LTMF140001000002",
+      "total": 17,
+      "mnv": 0,
+      "rate": "0.0"
+    },
+    {
+      "rank": 8,
+      "kyhieu": "S2-VLOF255901000001/S03",
+      "total": 17,
+      "mnv": 17,
+      "rate": "100.0"
+    },
+    {
+      "rank": 9,
+      "kyhieu": "S2.COG11104.01-16",
+      "total": 17,
+      "mnv": 0,
+      "rate": "0.0"
+    },
+    {
+      "rank": 10,
+      "kyhieu": "VGKF040000000004",
+      "total": 16,
+      "mnv": 0,
+      "rate": "0.0"
+    },
+    {
+      "rank": 11,
+      "kyhieu": "H-DGOF010101000001",
+      "total": 16,
+      "mnv": 0,
+      "rate": "0.0"
+    },
+    {
+      "rank": 12,
+      "kyhieu": "LTMF130000000016",
+      "total": 16,
+      "mnv": 0,
+      "rate": "0.0"
+    },
+    {
+      "rank": 13,
+      "kyhieu": "VGKF010000000001",
+      "total": 15,
+      "mnv": 0,
+      "rate": "0.0"
+    },
+    {
+      "rank": 14,
+      "kyhieu": "T-TDM-CTMQ-01-B01",
+      "total": 15,
+      "mnv": 0,
+      "rate": "0.0"
+    },
+    {
+      "rank": 15,
+      "kyhieu": "VGKF050000000005",
+      "total": 15,
+      "mnv": 0,
+      "rate": "0.0"
+    },
+    {
+      "rank": 16,
+      "kyhieu": "LTMF130000000011",
+      "total": 14,
+      "mnv": 0,
+      "rate": "0.0"
+    },
+    {
+      "rank": 17,
+      "kyhieu": "KHWF071507000010/S01",
+      "total": 14,
+      "mnv": 0,
+      "rate": "0.0"
+    },
+    {
+      "rank": 18,
+      "kyhieu": "GDIF320705000064/S01",
+      "total": 14,
+      "mnv": 0,
+      "rate": "0.0"
+    },
+    {
+      "rank": 19,
+      "kyhieu": "S1_KHWF071507000010/S02",
+      "total": 13,
+      "mnv": 0,
+      "rate": "0.0"
+    },
+    {
+      "rank": 20,
+      "kyhieu": "HBCF232901000001/S01",
+      "total": 13,
+      "mnv": 12,
+      "rate": "92.3"
+    }
+  ],
+  "updatedAt": "2026-09-11T04:16:32.094Z"
+}

@@ -35,6 +35,9 @@
       <button class="nav-tab-btn" id="tabMapViewBtn" onclick="switchView('map')">
         🗺️ Bản đồ hạ tầng
       </button>
+      <button class="nav-tab-btn" id="tabBaohongViewBtn" onclick="switchView('baohong')">
+        📊 Phân tích Báo hỏng MNV
+      </button>
 
       <!-- User Profile / Login -->
       <div class="user-profile" id="userProfileBar">
@@ -53,8 +56,8 @@
   <!-- Main Container -->
   <main class="main-wrapper">
 
-    <!-- KPI Stats Cards -->
-    <div class="stats-grid">
+    <!-- KPI Stats Cards (Infrastructure) -->
+    <div class="stats-grid" id="infraStatsGrid">
       <div class="stat-card total">
         <div class="stat-info">
           <div class="stat-label">Tổng số phiếu</div>
@@ -89,7 +92,7 @@
     </div>
 
     <!-- Actions & Filters Card -->
-    <div class="action-card">
+    <div class="action-card" id="infraActionCard">
       <div class="action-header">
         <div class="action-header-left">
           <h2 class="section-title">
@@ -212,6 +215,226 @@
           <span>Đã hoàn thành</span>
         </div>
       </div>
+    </div>
+
+    <!-- VIEW 3: Incident Breakdown Analysis (Báo hỏng MNV) -->
+    <div id="baohongViewContainer" class="baohong-container" style="display: none;">
+      
+      <!-- Top Sub-Header -->
+      <div class="baohong-header-card">
+        <div class="baohong-header-left">
+          <h2>📊 Báo Cáo Phân Tích Sự Cố Báo Hỏng & Mạng Ngoại Vi (MNV)</h2>
+          <p>Nguồn dữ liệu: <strong>Sheet ChiTiet</strong> (34.315 phiếu) • Tiêu chí lỗi MNV: <strong>Mã loại hỏng = 24</strong></p>
+        </div>
+        <div class="baohong-header-actions">
+          <button class="btn btn-outline" onclick="loadBaohongData(true)" id="btnRefreshBaohong" title="Nạp lại dữ liệu từ Google Sheet">
+            🔄 Làm mới số liệu
+          </button>
+          <a href="https://docs.google.com/spreadsheets/d/1NQTb6768I10CSZRbMC0sKUL9qK-baUEOsulY69vdImQ/edit?gid=1181763990#gid=1181763990" target="_blank" class="btn btn-secondary">
+            📑 Xem Google Sheet gốc
+          </a>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards for Baohong -->
+      <div class="stats-grid baohong-kpi-grid">
+        <div class="stat-card" style="border-left: 4px solid #3b82f6;">
+          <div class="stat-info">
+            <div class="stat-label">Tổng số phiếu báo hỏng</div>
+            <div class="stat-number" id="bhTotalTickets" style="color: #1d4ed8;">0</div>
+            <div class="stat-subtext">Toàn bộ địa bàn & các loại sự cố</div>
+          </div>
+          <div class="stat-icon-wrapper" style="background: #eff6ff; color: #3b82f6;">📋</div>
+        </div>
+
+        <div class="stat-card" style="border-left: 4px solid #ef4444;">
+          <div class="stat-info">
+            <div class="stat-label">Hư do Mạng Ngoại Vi (MNV)</div>
+            <div class="stat-number" id="bhMnvTickets" style="color: #dc2626;">0</div>
+            <div class="stat-subtext">Mã loại hỏng = 24 (Cáp, tủ hộp, splitter...)</div>
+          </div>
+          <div class="stat-icon-wrapper" style="background: #fef2f2; color: #ef4444;">⚡</div>
+        </div>
+
+        <div class="stat-card" style="border-left: 4px solid #f59e0b;">
+          <div class="stat-info">
+            <div class="stat-label">Tỷ lệ sự cố MNV</div>
+            <div class="stat-number" id="bhMnvRate" style="color: #d97706;">0%</div>
+            <div class="stat-subtext">Chiếm trên tổng số phiếu báo hỏng</div>
+          </div>
+          <div class="stat-icon-wrapper" style="background: #fffbeb; color: #f59e0b;">📈</div>
+        </div>
+
+        <div class="stat-card" style="border-left: 4px solid #10b981;">
+          <div class="stat-info">
+            <div class="stat-label">Điểm GPS định vị</div>
+            <div class="stat-number" id="bhGpsPoints" style="color: #059669;">0</div>
+            <div class="stat-subtext">Tọa độ kinh độ & vĩ độ hợp lệ</div>
+          </div>
+          <div class="stat-icon-wrapper" style="background: #ecfdf5; color: #10b981;">📍</div>
+        </div>
+      </div>
+
+      <!-- Heatmap Container -->
+      <div class="baohong-heatmap-section">
+        <div class="heatmap-header">
+          <div class="heatmap-title-group">
+            <h3>🔥 Bản Đồ Nhiệt Phân Bố Tình Trạng Hư Hỏng</h3>
+            <span class="heatmap-subtitle">Trực quan hóa mật độ sự cố theo tọa độ thực tế (Kinh độ & Vĩ độ)</span>
+          </div>
+          <div class="heatmap-controls">
+            <!-- Filter Type -->
+            <div class="heatmap-filter-group">
+              <button class="btn btn-sm btn-filter-hm active" id="btnHmFilterMnv" onclick="switchHeatmapType('mnv')">
+                ⚡ Lỗi MNV (3.245 điểm)
+              </button>
+              <button class="btn btn-sm btn-filter-hm" id="btnHmFilterAll" onclick="switchHeatmapType('all')">
+                🌐 Toàn bộ báo hỏng (28.642 điểm)
+              </button>
+            </div>
+            <!-- Quick Locations -->
+            <div class="heatmap-jump-group">
+              <span style="font-size: 0.8rem; font-weight: 600; color: #64748b;">Định vị nhanh:</span>
+              <button class="btn btn-sm btn-outline-chip" onclick="jumpHeatmap('all')">Toàn cảnh</button>
+              <button class="btn btn-sm btn-outline-chip" onclick="jumpHeatmap('hcm')">TP.HCM</button>
+              <button class="btn btn-sm btn-outline-chip" onclick="jumpHeatmap('bd')">Bình Dương</button>
+              <button class="btn btn-sm btn-outline-chip" onclick="jumpHeatmap('vt')">Bà Rịa - Vũng Tàu</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="heatmap-wrapper">
+          <div id="baohongHeatmap"></div>
+          <!-- Heatmap Legend & Radius Slider -->
+          <div class="heatmap-overlay-panel">
+            <div class="heatmap-legend-bar">
+              <span>Thấp</span>
+              <div class="heatmap-gradient-scale"></div>
+              <span>Cao</span>
+            </div>
+            <div class="heatmap-slider-control">
+              <label for="heatmapRadiusInput">Bán kính nhiệt: <span id="radiusValue">25</span>px</label>
+              <input type="range" id="heatmapRadiusInput" min="10" max="60" value="25" oninput="updateHeatmapRadius(this.value)">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Analytics Tables Grid -->
+      <div class="baohong-tables-grid">
+        
+        <!-- Table 1: TTVT Summary -->
+        <div class="baohong-card ttvt-card">
+          <div class="card-header-clean">
+            <div class="clean-title">
+              <h4>🏢 Tổng hợp số lượng phiếu theo Trung tâm Viễn thông (TTVT)</h4>
+              <span class="badge badge-info">Tổng hợp theo cột <code>ttvt</code></span>
+            </div>
+            <input type="text" id="searchTtvtInput" placeholder="🔍 Lọc nhanh TTVT..." class="form-control form-control-sm" style="max-width: 220px;" oninput="filterTtvtTable(this.value)">
+          </div>
+          <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+            <table class="data-table baohong-table">
+              <thead>
+                <tr>
+                  <th style="width: 50px; text-align: center;">STT</th>
+                  <th>Trung tâm Viễn thông</th>
+                  <th style="width: 110px; text-align: right;">Tổng phiếu</th>
+                  <th style="width: 130px; text-align: right; color: #dc2626;">Hư do MNV (24)</th>
+                  <th style="width: 105px; text-align: right;">Tỷ lệ MNV</th>
+                  <th style="width: 140px;">Biểu đồ tỷ lệ</th>
+                </tr>
+              </thead>
+              <tbody id="ttvtTableBody">
+                <!-- JS populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Sub-grid for Top 10 TOVT, Top 10 KV, Top 20 Kyhieu -->
+        <div class="baohong-subgrid">
+
+          <!-- Table 2: Top 10 TOVT -->
+          <div class="baohong-card">
+            <div class="card-header-clean">
+              <div class="clean-title">
+                <h4>🛠️ Top 10 Tổ KTĐB hư do MNV nhiều nhất</h4>
+                <span class="badge badge-warning">Cột <code>tovt</code> &amp; <code>ma_loaihong = 24</code></span>
+              </div>
+            </div>
+            <div class="table-responsive" style="max-height: 380px; overflow-y: auto;">
+              <table class="data-table baohong-table">
+                <thead>
+                  <tr>
+                    <th style="width: 50px; text-align: center;">Hạng</th>
+                    <th>Tổ Kỹ thuật Địa bàn</th>
+                    <th style="width: 95px; text-align: right; color: #dc2626;">Số ca MNV</th>
+                    <th style="width: 80px; text-align: right;">Tỷ lệ</th>
+                  </tr>
+                </thead>
+                <tbody id="tovtTableBody">
+                  <!-- JS populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Table 3: Top 10 Ma_kv -->
+          <div class="baohong-card">
+            <div class="card-header-clean">
+              <div class="clean-title">
+                <h4>📍 Top 10 Khu vực hư do MNV nhiều nhất</h4>
+                <span class="badge badge-danger">Cột <code>ma_kv</code> &amp; <code>ma_loaihong = 24</code></span>
+              </div>
+            </div>
+            <div class="table-responsive" style="max-height: 380px; overflow-y: auto;">
+              <table class="data-table baohong-table">
+                <thead>
+                  <tr>
+                    <th style="width: 50px; text-align: center;">Hạng</th>
+                    <th>Mã Khu Vực</th>
+                    <th style="width: 95px; text-align: right; color: #dc2626;">Số ca MNV</th>
+                    <th style="width: 80px; text-align: right;">Tỷ lệ</th>
+                  </tr>
+                </thead>
+                <tbody id="kvTableBody">
+                  <!-- JS populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Table 4: Top 20 Kyhieu -->
+          <div class="baohong-card baohong-card-span-2">
+            <div class="card-header-clean">
+              <div class="clean-title">
+                <h4>🏷️ Top 20 Ký hiệu hư nhiều nhất</h4>
+                <span class="badge badge-primary">Cột <code>kyhieu</code> (Kết cuối / Tủ cáp / Phân đoạn)</span>
+              </div>
+            </div>
+            <div class="table-responsive" style="max-height: 380px; overflow-y: auto;">
+              <table class="data-table baohong-table">
+                <thead>
+                  <tr>
+                    <th style="width: 50px; text-align: center;">Hạng</th>
+                    <th>Ký hiệu</th>
+                    <th style="width: 105px; text-align: right;">Tổng sự cố</th>
+                    <th style="width: 115px; text-align: right; color: #dc2626;">Do MNV (24)</th>
+                    <th style="width: 95px; text-align: right;">Tỷ lệ MNV</th>
+                    <th style="width: 120px;">Phân bổ</th>
+                  </tr>
+                </thead>
+                <tbody id="kyhieuTableBody">
+                  <!-- JS populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
     </div>
 
   </main>
@@ -543,6 +766,8 @@
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Leaflet Heat Plugin -->
+  <script src="js/leaflet-heat.js"></script>
   
   <!-- Main Application Script -->
   <script src="js/app.js"></script>
