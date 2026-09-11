@@ -150,6 +150,8 @@ app.post('/api/auth/login', (req, res) => {
       username: user.username,
       donvi: user.donvi,
       role: user.role,
+      unitType: user.unitType || 'all',
+      unitValue: user.unitValue || 'all',
       permissions: user.permissions || defaultPerms
     }
   });
@@ -159,28 +161,15 @@ app.post('/api/auth/login', (req, res) => {
 app.get('/api/auth/default-guest', (req, res) => {
   const db = readDB();
   const guest = (db.users || []).find(u => u.username === 'guest');
-  if (guest) {
-    return res.json({
-      success: true,
-      user: {
-        username: guest.username,
-        donvi: guest.donvi,
-        role: guest.role,
-        permissions: guest.permissions || {
-          list: { view: true, edit: false },
-          map: { view: true, edit: false },
-          baohong: { view: true, edit: false }
-        }
-      }
-    });
-  }
   res.json({
     success: true,
     user: {
-      username: 'guest',
-      donvi: 'Khách xem',
-      role: 'view',
-      permissions: {
+      username: guest ? guest.username : 'guest',
+      donvi: guest ? guest.donvi : 'Khách xem (Toàn mạng)',
+      role: guest ? guest.role : 'view',
+      unitType: guest ? (guest.unitType || 'all') : 'all',
+      unitValue: guest ? (guest.unitValue || 'all') : 'all',
+      permissions: guest?.permissions || {
         list: { view: true, edit: false },
         map: { view: true, edit: false },
         baohong: { view: true, edit: false }
@@ -189,7 +178,7 @@ app.get('/api/auth/default-guest', (req, res) => {
   });
 });
 
-// 1c. Get Users & Permissions (Admin only)
+// 1c. Get Users & Permissions & Unit Scope (Admin only)
 app.get('/api/admin/users', (req, res) => {
   try {
     const db = readDB();
@@ -197,52 +186,130 @@ app.get('/api/admin/users', (req, res) => {
       username: u.username,
       donvi: u.donvi,
       role: u.role,
+      unitType: u.unitType || 'all',
+      unitValue: u.unitValue || 'all',
       permissions: u.permissions || {
         list: { view: true, edit: u.role !== 'view' },
         map: { view: true, edit: u.role === 'admin' },
         baohong: { view: true, edit: u.role === 'admin' }
       }
     }));
-    res.json({ success: true, users });
+    res.json({
+      success: true,
+      users,
+      categories: {
+        pht: db.pht || [],
+        ttvt: db.ttvt || []
+      }
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-// 1d. Update User Permissions per Tab (Admin only)
+// 1d. Update User Permissions & Unit Scope (Admin only)
 app.post('/api/admin/users/permissions', (req, res) => {
   try {
-    let usersPermissions = req.body.usersPermissions;
-    if (!usersPermissions && Array.isArray(req.body.users)) {
-      usersPermissions = {};
-      req.body.users.forEach(u => {
-        if (u && u.username) {
-          usersPermissions[u.username] = u.permissions;
-        }
-      });
+    let usersList = req.body.users;
+    if (!usersList && req.body.usersPermissions) {
+      usersList = Object.entries(req.body.usersPermissions).map(([username, perms]) => ({
+        username,
+        permissions: perms
+      }));
     }
-    if (!usersPermissions || typeof usersPermissions !== 'object') {
+
+    if (!Array.isArray(usersList)) {
       return res.status(400).json({ success: false, message: 'Dữ liệu phân quyền không hợp lệ!' });
     }
 
     const db = readDB();
-    (db.users || []).forEach(u => {
-      if (usersPermissions[u.username]) {
-        // Admin always maintains full permissions
-        if (u.role === 'admin') {
+    usersList.forEach(item => {
+      const u = (db.users || []).find(x => x.username === item.username);
+      if (u) {
+        if (u.role === 'admin' || u.username === 'kythuat') {
           u.permissions = {
             list: { view: true, edit: true },
             map: { view: true, edit: true },
             baohong: { view: true, edit: true }
           };
+          u.unitType = 'all';
+          u.unitValue = 'all';
         } else {
-          u.permissions = usersPermissions[u.username];
+          if (item.permissions) u.permissions = item.permissions;
+          if (item.unitType) u.unitType = item.unitType;
+          if (item.unitValue !== undefined) u.unitValue = item.unitValue;
+          if (item.donvi) u.donvi = item.donvi;
+          else if (item.unitValue && item.unitValue !== 'all') u.donvi = item.unitValue;
         }
       }
     });
 
     writeDB(db);
-    res.json({ success: true, message: 'Cập nhật phân quyền theo từng tab thành công!' });
+    res.json({ success: true, message: 'Cập nhật phân quyền và phạm vi đơn vị thành công!' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 1e. Create New Unit User Account (Admin only)
+app.post('/api/admin/users/create', (req, res) => {
+  try {
+    const { username, password, role, unitType, unitValue } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ success: false, message: 'Vui lòng nhập đầy đủ Tên đăng nhập và Mật khẩu!' });
+    }
+
+    const db = readDB();
+    if (!db.users) db.users = [];
+    const normalizedUsername = username.trim().toLowerCase();
+    if (db.users.some(u => u.username.toLowerCase() === normalizedUsername)) {
+      return res.status(400).json({ success: false, message: `Tên đăng nhập "${username}" đã tồn tại!` });
+    }
+
+    const finalUnitValue = unitValue || 'all';
+    const finalUnitType = unitType || (finalUnitValue.startsWith('PHT') ? 'pht' : (finalUnitValue.startsWith('TTVT') ? 'ttvt' : 'all'));
+    const finalRole = role || 'editor';
+    const donviName = finalUnitValue !== 'all' ? finalUnitValue : 'Toàn mạng';
+
+    const newUser = {
+      username: normalizedUsername,
+      password: password.trim(),
+      donvi: donviName,
+      role: finalRole,
+      unitType: finalUnitType,
+      unitValue: finalUnitValue,
+      permissions: {
+        list: { view: true, edit: finalRole !== 'view' },
+        map: { view: true, edit: false },
+        baohong: { view: true, edit: false }
+      }
+    };
+
+    db.users.push(newUser);
+    writeDB(db);
+    res.json({ success: true, message: `Đã tạo tài khoản "${newUser.username}" cho ${donviName}!`, user: newUser });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 1f. Delete User Account (Admin only)
+app.delete('/api/admin/users/:username', (req, res) => {
+  try {
+    const username = req.params.username;
+    if (username === 'kythuat' || username === 'guest') {
+      return res.status(400).json({ success: false, message: 'Không thể xóa tài khoản hệ thống này!' });
+    }
+
+    const db = readDB();
+    const idx = (db.users || []).findIndex(u => u.username === username);
+    if (idx === -1) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy tài khoản!' });
+    }
+
+    db.users.splice(idx, 1);
+    writeDB(db);
+    res.json({ success: true, message: `Đã xóa tài khoản "${username}" thành công!` });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -266,7 +333,15 @@ app.get('/api/categories', (req, res) => {
 // 3. Stats Dashboard
 app.get('/api/stats', (req, res) => {
   const db = readDB();
-  const items = db.items || [];
+  let items = db.items || [];
+
+  const { userUnitType, userUnitValue } = req.query;
+  if (userUnitType === 'pht' && userUnitValue && userUnitValue !== 'all') {
+    items = items.filter(i => i.pht === userUnitValue);
+  } else if (userUnitType === 'ttvt' && userUnitValue && userUnitValue !== 'all') {
+    items = items.filter(i => i.ttvt === userUnitValue);
+  }
+
   const total = items.length;
   const chuaXuLy = items.filter(i => i.tinhTrang === 'Chưa xử lý').length;
   const dangXuLy = items.filter(i => i.tinhTrang === 'Đang xử lý').length;
@@ -304,7 +379,14 @@ app.get('/api/items', (req, res) => {
   const db = readDB();
   let items = [...(db.items || [])];
 
-  const { search, pht, ttvt, hangmuc, tinhTrang, giaiphap, uutien } = req.query;
+  const { search, pht, ttvt, hangmuc, tinhTrang, giaiphap, uutien, userUnitType, userUnitValue } = req.query;
+
+  // Enforce unit scope restriction if user belongs to specific PHT or TTVT
+  if (userUnitType === 'pht' && userUnitValue && userUnitValue !== 'all') {
+    items = items.filter(i => i.pht === userUnitValue);
+  } else if (userUnitType === 'ttvt' && userUnitValue && userUnitValue !== 'all') {
+    items = items.filter(i => i.ttvt === userUnitValue);
+  }
 
   if (pht && pht !== 'all') {
     items = items.filter(i => i.pht === pht);

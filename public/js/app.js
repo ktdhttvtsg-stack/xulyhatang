@@ -31,8 +31,10 @@ function getDefaultPermissions(role) {
 const state = {
   currentUser: {
     username: 'guest',
-    donvi: 'Khách xem',
+    donvi: 'Khách xem (Toàn mạng)',
     role: 'view',
+    unitType: 'all',
+    unitValue: 'all',
     permissions: getDefaultPermissions('view')
   },
   categories: {
@@ -94,20 +96,26 @@ function loadStoredUser() {
       if (!state.currentUser.permissions) {
         state.currentUser.permissions = getDefaultPermissions(state.currentUser.role);
       }
+      if (!state.currentUser.unitType) state.currentUser.unitType = 'all';
+      if (!state.currentUser.unitValue) state.currentUser.unitValue = 'all';
     } else {
       // Default to guest (Khách xem)
       state.currentUser = {
         username: 'guest',
-        donvi: 'Khách xem',
+        donvi: 'Khách xem (Toàn mạng)',
         role: 'view',
+        unitType: 'all',
+        unitValue: 'all',
         permissions: getDefaultPermissions('view')
       };
     }
   } catch (e) {
     state.currentUser = {
       username: 'guest',
-      donvi: 'Khách xem',
+      donvi: 'Khách xem (Toàn mạng)',
       role: 'view',
+      unitType: 'all',
+      unitValue: 'all',
       permissions: getDefaultPermissions('view')
     };
   }
@@ -121,22 +129,39 @@ function saveStoredUser(user) {
   updateUserUI();
 }
 
-// Update UI based on User Role and Tab Permissions
+// Update UI based on User Role, Tab Permissions & Unit Scope
 function updateUserUI() {
   const user = state.currentUser;
   const nameEl = document.getElementById('userNameDisplay');
   const badgeEl = document.getElementById('userRoleBadge');
+  const unitBadgeEl = document.getElementById('userUnitBadge');
   const avatarEl = document.getElementById('userAvatar');
   const addBtn = document.getElementById('addNewBtn');
   const adminBtn = document.getElementById('btnAdminPermissions');
+  const scopeBanner = document.getElementById('unitScopeBanner');
+  const scopeNameEl = document.getElementById('unitScopeName');
 
   const tabList = document.getElementById('tabListViewBtn');
   const tabMap = document.getElementById('tabMapViewBtn');
   const tabBaohong = document.getElementById('tabBaohongViewBtn');
   const refreshBaohongBtn = document.getElementById('btnRefreshBaohong');
 
-  if (nameEl) nameEl.textContent = `${user.username} (${user.donvi || ''})`;
+  if (nameEl) nameEl.textContent = user.username;
   if (avatarEl) avatarEl.textContent = (user.username || 'GS').substring(0, 2).toUpperCase();
+
+  const unitText = (user.unitValue && user.unitValue !== 'all') ? user.unitValue : (user.donvi || 'Toàn mạng');
+  if (unitBadgeEl) {
+    unitBadgeEl.textContent = `🏢 ${unitText}`;
+  }
+
+  if (scopeBanner) {
+    if (user.unitValue && user.unitValue !== 'all') {
+      scopeBanner.style.display = 'flex';
+      if (scopeNameEl) scopeNameEl.textContent = user.unitValue;
+    } else {
+      scopeBanner.style.display = 'none';
+    }
+  }
 
   if (badgeEl) {
     badgeEl.className = 'user-role-badge';
@@ -170,6 +195,30 @@ function updateUserUI() {
   // Permission: Refresh Baohong data
   if (refreshBaohongBtn) {
     refreshBaohongBtn.style.display = canUser('baohong', 'edit') ? 'inline-flex' : 'none';
+  }
+
+  // Restrict filter dropdowns based on unit scope
+  const filterPht = document.getElementById('filterPht');
+  const filterTtvt = document.getElementById('filterTtvt');
+  if (filterPht) {
+    if (user.unitType === 'pht' && user.unitValue && user.unitValue !== 'all') {
+      filterPht.value = user.unitValue;
+      filterPht.disabled = true;
+      filterPht.title = 'Khóa theo đơn vị Phòng HT của bạn';
+    } else {
+      filterPht.disabled = false;
+      filterPht.title = '';
+    }
+  }
+  if (filterTtvt) {
+    if (user.unitType === 'ttvt' && user.unitValue && user.unitValue !== 'all') {
+      filterTtvt.value = user.unitValue;
+      filterTtvt.disabled = true;
+      filterTtvt.title = 'Khóa theo đơn vị TTVT của bạn';
+    } else {
+      filterTtvt.disabled = false;
+      filterTtvt.title = '';
+    }
   }
 
   // If currently on a forbidden tab, switch to the first allowed tab
@@ -232,7 +281,12 @@ function populateSelect(elemId, items, placeholder) {
 
 async function loadStats() {
   try {
-    const res = await fetch('/api/stats');
+    const params = new URLSearchParams();
+    if (state.currentUser && state.currentUser.unitType && state.currentUser.unitType !== 'all') {
+      params.append('userUnitType', state.currentUser.unitType);
+      params.append('userUnitValue', state.currentUser.unitValue);
+    }
+    const res = await fetch(`/api/stats?${params.toString()}`);
     const data = await res.json();
     if (data.success && data.stats) {
       document.getElementById('statTotal').textContent = data.stats.total || 0;
@@ -248,6 +302,11 @@ async function loadStats() {
 async function loadItems() {
   try {
     const params = new URLSearchParams();
+    if (state.currentUser && state.currentUser.unitType && state.currentUser.unitType !== 'all') {
+      params.append('userUnitType', state.currentUser.unitType);
+      params.append('userUnitValue', state.currentUser.unitValue);
+    }
+
     const search = document.getElementById('filterSearch').value;
     const pht = document.getElementById('filterPht').value;
     const ttvt = document.getElementById('filterTtvt').value;
@@ -647,6 +706,22 @@ function openCreateModal() {
     document.getElementById('formMoTaHienTrang').value = '';
   }
 
+  // Pre-set and lock unit if user is constrained
+  const formPht = document.getElementById('formPht');
+  const formTtvt = document.getElementById('formTtvt');
+  if (state.currentUser.unitType === 'pht' && state.currentUser.unitValue && state.currentUser.unitValue !== 'all') {
+    formPht.value = state.currentUser.unitValue;
+    formPht.disabled = true;
+  } else {
+    formPht.disabled = false;
+  }
+  if (state.currentUser.unitType === 'ttvt' && state.currentUser.unitValue && state.currentUser.unitValue !== 'all') {
+    formTtvt.value = state.currentUser.unitValue;
+    formTtvt.disabled = true;
+  } else {
+    formTtvt.disabled = false;
+  }
+
   state.formImagesBefore = [];
   state.formImagesAfter = [];
   renderFormImagesPreview();
@@ -675,8 +750,20 @@ async function openEditModal(id) {
     document.getElementById('itemModalTitle').textContent = `✏️ Chỉnh Sửa Phiếu: ${item.id}`;
     document.getElementById('formItemId').value = item.id;
 
-    document.getElementById('formPht').value = item.pht || '';
-    document.getElementById('formTtvt').value = item.ttvt || '';
+    const formPht = document.getElementById('formPht');
+    const formTtvt = document.getElementById('formTtvt');
+    formPht.value = item.pht || '';
+    formTtvt.value = item.ttvt || '';
+    if (state.currentUser.unitType === 'pht' && state.currentUser.unitValue && state.currentUser.unitValue !== 'all') {
+      formPht.disabled = true;
+    } else {
+      formPht.disabled = false;
+    }
+    if (state.currentUser.unitType === 'ttvt' && state.currentUser.unitValue && state.currentUser.unitValue !== 'all') {
+      formTtvt.disabled = true;
+    } else {
+      formTtvt.disabled = false;
+    }
     document.getElementById('formHangmuc').value = item.hangmuc || '';
     document.getElementById('formUutien').value = item.uutien || 'UT2 - Ưu tiên';
 
@@ -1988,8 +2075,9 @@ function toggleHeatmapBoundary() {
   showToast(state.showBaohongBoundary ? 'Đã bật ranh giới TTVT trên bản đồ nhiệt' : 'Đã ẩn ranh giới TTVT', 'info');
 }
 
-// ================= ADMIN PERMISSIONS MANAGEMENT =================
+// ================= ADMIN PERMISSIONS & UNIT SCOPE MANAGEMENT =================
 let adminUsersList = [];
+let adminCategories = { pht: [], ttvt: [] };
 
 async function openAdminPermissionsModal() {
   if (state.currentUser.role !== 'admin') {
@@ -2006,6 +2094,22 @@ async function openAdminPermissionsModal() {
     }
 
     adminUsersList = data.users || [];
+    adminCategories = data.categories || state.categories || { pht: [], ttvt: [] };
+
+    // Populate the new account unit select
+    const unitSelect = document.getElementById('newAccountUnit');
+    if (unitSelect) {
+      unitSelect.innerHTML = `
+        <option value="all">🌐 Toàn mạng (Tất cả đơn vị)</option>
+        <optgroup label="🏢 Phòng Hạ Tầng (PHT)">
+          ${(adminCategories.pht || []).map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('')}
+        </optgroup>
+        <optgroup label="📡 Trung Tâm Viễn Thông (TTVT)">
+          ${(adminCategories.ttvt || []).map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('')}
+        </optgroup>
+      `;
+    }
+
     renderAdminPermissionsTable(adminUsersList);
     document.getElementById('adminPermissionsModal').classList.add('active');
   } catch (err) {
@@ -2024,9 +2128,13 @@ function renderAdminPermissionsTable(users) {
 
   tbody.innerHTML = '';
 
+  const phtList = adminCategories.pht || state.categories.pht || [];
+  const ttvtList = adminCategories.ttvt || state.categories.ttvt || [];
+
   users.forEach((u) => {
     const tr = document.createElement('tr');
     const isAdmin = (u.role === 'admin' || u.username === 'kythuat');
+    const isGuest = (u.username === 'guest');
     
     // Ensure permissions structure exists
     const p = u.permissions || getDefaultPermissions(u.role);
@@ -2036,9 +2144,29 @@ function renderAdminPermissionsTable(users) {
     const baohongView = p.baohong?.view ?? true;
     const baohongEdit = p.baohong?.edit ?? false;
 
+    const currentUnitVal = u.unitValue || (u.unitType === 'all' ? 'all' : u.donvi) || 'all';
+
     let roleBadge = '<span class="user-role-badge role-view" style="font-size: 0.7rem; padding: 2px 6px;">VIEW</span>';
     if (u.role === 'admin') roleBadge = '<span class="user-role-badge role-admin" style="font-size: 0.7rem; padding: 2px 6px;">ADMIN</span>';
     else if (u.role === 'editor') roleBadge = '<span class="user-role-badge role-editor" style="font-size: 0.7rem; padding: 2px 6px;">EDITOR</span>';
+
+    // Unit options
+    let unitOptions = `<option value="all" ${currentUnitVal === 'all' ? 'selected' : ''}>🌐 Toàn mạng (Tất cả đơn vị)</option>`;
+    unitOptions += `<optgroup label="🏢 Phòng Hạ Tầng (PHT)">`;
+    phtList.forEach(pht => {
+      unitOptions += `<option value="${escapeHtml(pht)}" ${currentUnitVal === pht ? 'selected' : ''}>${escapeHtml(pht)}</option>`;
+    });
+    unitOptions += `</optgroup><optgroup label="📡 Trung Tâm Viễn Thông (TTVT)">`;
+    ttvtList.forEach(tt => {
+      unitOptions += `<option value="${escapeHtml(tt)}" ${currentUnitVal === tt ? 'selected' : ''}>${escapeHtml(tt)}</option>`;
+    });
+    unitOptions += `</optgroup>`;
+
+    const deleteBtn = (!isAdmin && !isGuest) ? `
+      <button class="btn btn-sm btn-outline-danger" onclick="deleteUnitAccount('${escapeHtml(u.username)}')" title="Xóa tài khoản này" style="padding: 2px 6px; font-size: 0.75rem; color: #ef4444; border-color: #fca5a5;">
+        🗑️
+      </button>
+    ` : '';
 
     tr.innerHTML = `
       <td>
@@ -2047,6 +2175,13 @@ function renderAdminPermissionsTable(users) {
       </td>
       <td style="text-align: center;">${roleBadge}</td>
       
+      <!-- Unit Scope Dropdown -->
+      <td style="border-left: 1px solid #e2e8f0;">
+        <select class="form-control user-unit-scope-select" data-user="${escapeHtml(u.username)}" style="font-size: 0.775rem; padding: 0.35rem 0.5rem; ${isAdmin ? 'background: #f1f5f9;' : ''}" ${isAdmin ? 'disabled' : ''}>
+          ${unitOptions}
+        </select>
+      </td>
+
       <!-- Tab List -->
       <td style="text-align: center; border-left: 1px solid #e2e8f0;">
         <label class="perm-checkbox-label">
@@ -2080,6 +2215,11 @@ function renderAdminPermissionsTable(users) {
           <span>Làm mới</span>
         </label>
       </td>
+
+      <!-- Action -->
+      <td style="text-align: center;">
+        ${deleteBtn}
+      </td>
     `;
     tbody.appendChild(tr);
   });
@@ -2098,6 +2238,9 @@ async function saveAdminPermissions() {
   adminUsersList.forEach(u => {
     usersMap[u.username] = {
       username: u.username,
+      donvi: u.donvi,
+      unitType: u.unitType || 'all',
+      unitValue: u.unitValue || 'all',
       permissions: {
         list: { view: true, edit: false },
         map: { view: true, edit: false },
@@ -2106,13 +2249,33 @@ async function saveAdminPermissions() {
     };
   });
 
+  // Collect unit scope selections
+  const unitSelects = tbody.querySelectorAll('.user-unit-scope-select');
+  unitSelects.forEach(sel => {
+    const user = sel.dataset.user;
+    if (usersMap[user]) {
+      const val = sel.value;
+      usersMap[user].unitValue = val;
+      if (val === 'all') {
+        usersMap[user].unitType = 'all';
+        usersMap[user].donvi = 'Toàn mạng';
+      } else if (val.startsWith('PHT')) {
+        usersMap[user].unitType = 'pht';
+        usersMap[user].donvi = val;
+      } else if (val.startsWith('TTVT')) {
+        usersMap[user].unitType = 'ttvt';
+        usersMap[user].donvi = val;
+      }
+    }
+  });
+
+  // Collect checkbox permissions
   const inputs = tbody.querySelectorAll('input[type="checkbox"]');
   inputs.forEach(input => {
     const user = input.dataset.user;
     const tab = input.dataset.tab;
     const perm = input.dataset.perm;
     if (usersMap[user] && usersMap[user].permissions[tab]) {
-      // If disabled (admin), always true
       if (input.disabled) {
         usersMap[user].permissions[tab][perm] = true;
       } else {
@@ -2132,23 +2295,98 @@ async function saveAdminPermissions() {
 
     const data = await res.json();
     if (data.success) {
-      showToast('Đã lưu cấu hình phân quyền người dùng thành công!', 'success');
+      showToast('Đã lưu cấu hình phân quyền và phạm vi đơn vị thành công!', 'success');
       closeAdminPermissionsModal();
 
       // If current user permissions were changed, update local state
       const currentUpdated = updatedUsers.find(u => u.username === state.currentUser.username);
       if (currentUpdated) {
         state.currentUser.permissions = currentUpdated.permissions;
+        state.currentUser.unitType = currentUpdated.unitType;
+        state.currentUser.unitValue = currentUpdated.unitValue;
+        state.currentUser.donvi = currentUpdated.donvi;
         saveStoredUser(state.currentUser);
       }
 
       updateUserUI();
-      renderItemsTable(state.items);
+      await loadStats();
+      await loadItems();
     } else {
       showToast('Lỗi lưu phân quyền: ' + data.message, 'error');
     }
   } catch (err) {
     showToast('Lỗi kết nối khi lưu phân quyền: ' + err.message, 'error');
+  }
+}
+
+async function createNewUnitAccount() {
+  if (state.currentUser.role !== 'admin') {
+    showToast('Chỉ Quản trị viên (Admin) mới có quyền tạo tài khoản!', 'error');
+    return;
+  }
+
+  const usernameInput = document.getElementById('newAccountUsername');
+  const passwordInput = document.getElementById('newAccountPassword');
+  const unitSelect = document.getElementById('newAccountUnit');
+  const roleSelect = document.getElementById('newAccountRole');
+
+  const username = usernameInput ? usernameInput.value.trim() : '';
+  const password = passwordInput ? passwordInput.value.trim() : '';
+  const unitValue = unitSelect ? unitSelect.value : 'all';
+  const role = roleSelect ? roleSelect.value : 'editor';
+
+  if (!username || !password) {
+    showToast('Vui lòng nhập Tên đăng nhập và Mật khẩu!', 'warning');
+    return;
+  }
+
+  const unitType = (unitValue.startsWith('PHT') ? 'pht' : (unitValue.startsWith('TTVT') ? 'ttvt' : 'all'));
+
+  try {
+    const res = await fetch('/api/admin/users/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, unitValue, unitType, role })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      showToast(data.message || 'Đã tạo tài khoản mới thành công!', 'success');
+      usernameInput.value = '';
+      if (data.user) {
+        adminUsersList.push(data.user);
+        renderAdminPermissionsTable(adminUsersList);
+      }
+    } else {
+      showToast('Lỗi tạo tài khoản: ' + data.message, 'error');
+    }
+  } catch (err) {
+    showToast('Lỗi kết nối khi tạo tài khoản: ' + err.message, 'error');
+  }
+}
+
+async function deleteUnitAccount(username) {
+  if (state.currentUser.role !== 'admin') {
+    showToast('Chỉ Quản trị viên (Admin) mới có quyền xóa tài khoản!', 'error');
+    return;
+  }
+
+  if (!confirm(`Bạn có chắc chắn muốn xóa tài khoản [${username}] không?`)) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/admin/users/${username}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (data.success) {
+      showToast(data.message || 'Đã xóa tài khoản thành công!', 'success');
+      adminUsersList = adminUsersList.filter(u => u.username !== username);
+      renderAdminPermissionsTable(adminUsersList);
+    } else {
+      showToast('Lỗi xóa tài khoản: ' + data.message, 'error');
+    }
+  } catch (err) {
+    showToast('Lỗi kết nối khi xóa tài khoản: ' + err.message, 'error');
   }
 }
 

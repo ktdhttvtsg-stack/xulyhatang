@@ -43,8 +43,11 @@
       <div class="user-profile" id="userProfileBar">
         <div class="user-avatar" id="userAvatar">KT</div>
         <div class="user-info">
-          <div class="user-name" id="userNameDisplay">kythuat (PKT)</div>
-          <span class="user-role-badge role-admin" id="userRoleBadge">ADMIN</span>
+          <div style="display: flex; align-items: center; gap: 0.35rem;">
+            <div class="user-name" id="userNameDisplay">kythuat</div>
+            <span class="user-role-badge role-admin" id="userRoleBadge">ADMIN</span>
+          </div>
+          <div id="userUnitBadge" style="font-size: 0.725rem; font-weight: 600; color: #0284c7;">🏢 Toàn mạng (PKT)</div>
         </div>
         <button class="btn btn-sm btn-outline" id="authBtn" onclick="handleAuthClick()" style="margin-left: 0.5rem;">
           Đổi TK
@@ -58,6 +61,15 @@
 
   <!-- Main Container -->
   <main class="main-wrapper">
+
+    <!-- Unit Scope Notice Banner -->
+    <div id="unitScopeBanner" style="display: none; align-items: center; justify-content: space-between; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 0.6rem 1rem; margin-bottom: 1rem; font-size: 0.825rem; color: #0369a1;">
+      <div>
+        <span style="font-size: 1.05rem; margin-right: 0.35rem;">🏢</span>
+        Phạm vi dữ liệu: <strong id="unitScopeName">Toàn mạng</strong>. Bạn chỉ xem và thao tác trên các phiếu hạ tầng thuộc đơn vị của mình.
+      </div>
+      <span class="badge" style="background: #0284c7; color: #ffffff; font-size: 0.725rem;">Đơn vị phụ trách</span>
+    </div>
 
     <!-- KPI Stats Cards (Infrastructure) -->
     <div class="stats-grid" id="infraStatsGrid">
@@ -774,44 +786,50 @@
 
   <!-- ================= MODAL: QUẢN LÝ PHÂN QUYỀN TỪNG TAB (ADMIN) ================= -->
   <div class="modal-overlay" id="adminPermissionsModal">
-    <div class="modal-content" style="max-width: 860px;">
+    <div class="modal-content" style="max-width: 1040px;">
       <div class="modal-header">
-        <h3 class="modal-title">🛡️ Quản Lý Phân Quyền Người Dùng Theo Từng Tab</h3>
+        <h3 class="modal-title">🛡️ Quản Lý Phân Quyền & Phạm Vi Đơn Vị (Phòng HT / TTVT)</h3>
         <button class="modal-close" onclick="closeAdminPermissionsModal()">&times;</button>
       </div>
       <div class="modal-body">
-        <p style="font-size: 0.85rem; color: #475569; margin-bottom: 1rem;">
-          Quản trị viên (Admin) có thể bật/tắt quyền <strong>Xem</strong> và <strong>Sửa / Thao tác</strong> cho từng tài khoản trên từng tab chức năng:
+        <p style="font-size: 0.85rem; color: #475569; margin-bottom: 0.75rem;">
+          Quản trị viên (Admin) thiết lập <strong>Phạm vi dữ liệu (Phòng HT / TTVT)</strong> để các đơn vị chỉ thấy các phần liên quan của họ, đồng thời bật/tắt quyền <strong>Xem</strong> và <strong>Sửa</strong> trên từng tab:
         </p>
         
-        <div class="table-responsive" style="border: 1px solid var(--border-color); border-radius: 8px;">
+        <div class="table-responsive" style="border: 1px solid var(--border-color); border-radius: 8px; max-height: 420px; overflow-y: auto;">
           <table class="data-table" style="font-size: 0.825rem;">
             <thead>
               <tr style="background: #f8fafc;">
-                <th style="width: 22%;">Tài khoản / Đơn vị</th>
-                <th style="width: 13%; text-align: center;">Vai trò</th>
-                <th style="width: 23%; text-align: center; border-left: 1px solid #e2e8f0;">
-                  📋 Tab Danh sách phiếu
+                <th style="width: 16%;">Tài khoản</th>
+                <th style="width: 10%; text-align: center;">Vai trò</th>
+                <th style="width: 24%; border-left: 1px solid #e2e8f0;">
+                  🏢 Phạm vi Đơn vị (Phòng HT / TTVT)
                 </th>
-                <th style="width: 17%; text-align: center; border-left: 1px solid #e2e8f0;">
-                  🗺️ Tab Bản đồ hạ tầng
+                <th style="width: 18%; text-align: center; border-left: 1px solid #e2e8f0;">
+                  📋 Danh sách phiếu
                 </th>
-                <th style="width: 25%; text-align: center; border-left: 1px solid #e2e8f0;">
-                  📊 Tab Báo hỏng MNV
+                <th style="width: 12%; text-align: center; border-left: 1px solid #e2e8f0;">
+                  🗺️ Bản đồ
                 </th>
+                <th style="width: 16%; text-align: center; border-left: 1px solid #e2e8f0;">
+                  📊 Báo hỏng MNV
+                </th>
+                <th style="width: 4%; text-align: center;"></th>
               </tr>
               <tr style="background: #f1f5f9; font-size: 0.725rem; color: #64748b;">
                 <th></th>
                 <th></th>
+                <th style="border-left: 1px solid #e2e8f0; font-style: italic;">Chỉ thấy dữ liệu của đơn vị này</th>
                 <th style="text-align: center; border-left: 1px solid #e2e8f0;">
-                  <span style="margin: 0 8px;">Xem</span> | <span style="margin: 0 8px;">Sửa / Thêm</span>
+                  <span style="margin: 0 4px;">Xem</span> | <span style="margin: 0 4px;">Sửa</span>
                 </th>
                 <th style="text-align: center; border-left: 1px solid #e2e8f0;">
-                  <span style="margin: 0 8px;">Xem</span>
+                  <span style="margin: 0 4px;">Xem</span>
                 </th>
                 <th style="text-align: center; border-left: 1px solid #e2e8f0;">
-                  <span style="margin: 0 8px;">Xem</span> | <span style="margin: 0 8px;">Làm mới</span>
+                  <span style="margin: 0 4px;">Xem</span> | <span style="margin: 0 4px;">Làm mới</span>
                 </th>
+                <th></th>
               </tr>
             </thead>
             <tbody id="adminPermissionsTableBody">
@@ -820,8 +838,43 @@
           </table>
         </div>
 
+        <!-- Section: Create New Unit Account -->
+        <div style="margin-top: 1.25rem; padding: 1rem; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px;">
+          <h4 style="font-size: 0.85rem; font-weight: 700; color: #1e293b; margin-bottom: 0.75rem;">
+            ➕ Tạo Tài Khoản Mới Cho Đơn Vị (Phòng HT / TTVT)
+          </h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) 120px; gap: 0.75rem; align-items: flex-end;">
+            <div>
+              <label class="form-label" style="font-size: 0.75rem; margin-bottom: 0.25rem;">Tên đăng nhập:</label>
+              <input type="text" id="newAccountUsername" class="form-control" placeholder="VD: pht_tanbinh, ttvt_cholon" style="font-size: 0.8rem; padding: 0.4rem 0.6rem;">
+            </div>
+            <div>
+              <label class="form-label" style="font-size: 0.75rem; margin-bottom: 0.25rem;">Mật khẩu:</label>
+              <input type="password" id="newAccountPassword" class="form-control" placeholder="Mật khẩu" value="123456" style="font-size: 0.8rem; padding: 0.4rem 0.6rem;">
+            </div>
+            <div>
+              <label class="form-label" style="font-size: 0.75rem; margin-bottom: 0.25rem;">Đơn vị phụ trách:</label>
+              <select id="newAccountUnit" class="form-control" style="font-size: 0.8rem; padding: 0.4rem 0.6rem;">
+                <!-- Populated dynamically with PHT and TTVT -->
+              </select>
+            </div>
+            <div>
+              <label class="form-label" style="font-size: 0.75rem; margin-bottom: 0.25rem;">Vai trò:</label>
+              <select id="newAccountRole" class="form-control" style="font-size: 0.8rem; padding: 0.4rem 0.6rem;">
+                <option value="editor">Editor (Xem + Sửa)</option>
+                <option value="view">View (Chỉ xem)</option>
+              </select>
+            </div>
+            <div>
+              <button type="button" class="btn btn-sm btn-primary" onclick="createNewUnitAccount()" style="width: 100%; padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                ➕ Thêm TK
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div style="margin-top: 0.75rem; font-size: 0.75rem; color: #64748b;">
-          💡 <em>Ghi chú:</em> Tài khoản Quản trị viên (Admin) luôn mặc định có toàn bộ quyền trên tất cả các tab.
+          💡 <em>Ghi chú:</em> Khi gán tài khoản cho một <strong>Phòng HT</strong> hoặc <strong>TTVT</strong>, tài khoản đó sẽ tự động chỉ thấy phiếu và số liệu thuộc đơn vị của mình trên tất cả các tab. Tài khoản Quản trị viên (Admin) luôn mặc định có quyền toàn mạng.
         </div>
       </div>
       <div class="modal-footer">
@@ -848,6 +901,6 @@
   <script src="js/leaflet-heat.js"></script>
   
   <!-- Main Application Script -->
-  <script src="js/app.js?v=1.3"></script>
+  <script src="js/app.js?v=1.4"></script>
 </body>
 </html>

@@ -72,10 +72,12 @@
   ],
   "users": [
     {
-      "donvi": "PKT",
+      "donvi": "PKT (Toàn mạng)",
       "username": "kythuat",
       "password": "123456",
       "role": "admin",
+      "unitType": "all",
+      "unitValue": "all",
       "permissions": {
         "list": {
           "view": true,
@@ -96,6 +98,8 @@
       "username": "editor",
       "password": "123456",
       "role": "editor",
+      "unitType": "ttvt",
+      "unitValue": "TTVT An Đông",
       "permissions": {
         "list": {
           "view": true,
@@ -112,21 +116,89 @@
       }
     },
     {
-      "donvi": "guest",
+      "donvi": "PHT Sài Gòn",
+      "username": "pht_saigon",
+      "password": "123456",
+      "role": "editor",
+      "unitType": "pht",
+      "unitValue": "PHT Sài Gòn",
+      "permissions": {
+        "list": {
+          "view": true,
+          "edit": true
+        },
+        "map": {
+          "view": true,
+          "edit": false
+        },
+        "baohong": {
+          "view": true,
+          "edit": false
+        }
+      }
+    },
+    {
+      "donvi": "TTVT Sài Gòn",
+      "username": "ttvt_saigon",
+      "password": "123456",
+      "role": "editor",
+      "unitType": "ttvt",
+      "unitValue": "TTVT Sài Gòn",
+      "permissions": {
+        "list": {
+          "view": true,
+          "edit": true
+        },
+        "map": {
+          "view": true,
+          "edit": false
+        },
+        "baohong": {
+          "view": true,
+          "edit": false
+        }
+      }
+    },
+    {
+      "donvi": "PHT Bình Chánh",
+      "username": "pht_binhchanh",
+      "password": "123456",
+      "role": "editor",
+      "unitType": "pht",
+      "unitValue": "PHT Bình Chánh",
+      "permissions": {
+        "list": {
+          "view": true,
+          "edit": true
+        },
+        "map": {
+          "view": true,
+          "edit": false
+        },
+        "baohong": {
+          "view": true,
+          "edit": false
+        }
+      }
+    },
+    {
+      "donvi": "Toàn mạng",
       "username": "guest",
       "password": "123456",
       "role": "view",
+      "unitType": "all",
+      "unitValue": "all",
       "permissions": {
         "list": {
           "view": true,
           "edit": false
         },
         "map": {
-          "view": false,
+          "view": true,
           "edit": false
         },
         "baohong": {
-          "view": false,
+          "view": true,
           "edit": false
         }
       }
