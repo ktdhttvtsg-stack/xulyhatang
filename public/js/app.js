@@ -2,12 +2,38 @@
  * XỬ LÝ HẠ TẦNG VIỄN THÔNG - CLIENT LOGIC (app.js)
  */
 
-// Application State
+// Permission defaults
+const DEFAULT_GUEST_PERMISSIONS = {
+  list: { view: true, edit: false },
+  map: { view: true, edit: false },
+  baohong: { view: true, edit: false }
+};
+
+const DEFAULT_ADMIN_PERMISSIONS = {
+  list: { view: true, edit: true },
+  map: { view: true, edit: true },
+  baohong: { view: true, edit: true }
+};
+
+const DEFAULT_EDITOR_PERMISSIONS = {
+  list: { view: true, edit: true },
+  map: { view: true, edit: false },
+  baohong: { view: true, edit: false }
+};
+
+function getDefaultPermissions(role) {
+  if (role === 'admin') return JSON.parse(JSON.stringify(DEFAULT_ADMIN_PERMISSIONS));
+  if (role === 'editor') return JSON.parse(JSON.stringify(DEFAULT_EDITOR_PERMISSIONS));
+  return JSON.parse(JSON.stringify(DEFAULT_GUEST_PERMISSIONS));
+}
+
+// Application State - Default to guest (Khách xem)
 const state = {
   currentUser: {
-    username: 'kythuat',
-    donvi: 'PKT',
-    role: 'admin' // admin | editor | view
+    username: 'guest',
+    donvi: 'Khách xem',
+    role: 'view',
+    permissions: getDefaultPermissions('view')
   },
   categories: {
     pht: [],
@@ -37,6 +63,18 @@ const state = {
   showBaohongBoundary: true
 };
 
+// Check if user has permission for a specific tab and action
+function canUser(tab, action = 'view') {
+  const user = state.currentUser;
+  if (!user) return false;
+  if (user.role === 'admin') return true; // Admin has full access
+  if (!user.permissions || !user.permissions[tab]) {
+    const fallback = getDefaultPermissions(user.role);
+    return !!(fallback[tab] && fallback[tab][action]);
+  }
+  return !!user.permissions[tab][action];
+}
+
 // ================= INITIALIZATION =================
 document.addEventListener('DOMContentLoaded', async () => {
   loadStoredUser();
@@ -47,15 +85,31 @@ document.addEventListener('DOMContentLoaded', async () => {
   initOverallMap();
 });
 
-// Load User from LocalStorage
+// Load User from LocalStorage - Default to guest
 function loadStoredUser() {
   try {
     const saved = localStorage.getItem('xuly_user');
     if (saved) {
       state.currentUser = JSON.parse(saved);
+      if (!state.currentUser.permissions) {
+        state.currentUser.permissions = getDefaultPermissions(state.currentUser.role);
+      }
+    } else {
+      // Default to guest (Khách xem)
+      state.currentUser = {
+        username: 'guest',
+        donvi: 'Khách xem',
+        role: 'view',
+        permissions: getDefaultPermissions('view')
+      };
     }
   } catch (e) {
-    console.error('Error reading localStorage', e);
+    state.currentUser = {
+      username: 'guest',
+      donvi: 'Khách xem',
+      role: 'view',
+      permissions: getDefaultPermissions('view')
+    };
   }
 }
 
@@ -67,16 +121,22 @@ function saveStoredUser(user) {
   updateUserUI();
 }
 
-// Update UI based on User Role
+// Update UI based on User Role and Tab Permissions
 function updateUserUI() {
   const user = state.currentUser;
   const nameEl = document.getElementById('userNameDisplay');
   const badgeEl = document.getElementById('userRoleBadge');
   const avatarEl = document.getElementById('userAvatar');
   const addBtn = document.getElementById('addNewBtn');
+  const adminBtn = document.getElementById('btnAdminPermissions');
+
+  const tabList = document.getElementById('tabListViewBtn');
+  const tabMap = document.getElementById('tabMapViewBtn');
+  const tabBaohong = document.getElementById('tabBaohongViewBtn');
+  const refreshBaohongBtn = document.getElementById('btnRefreshBaohong');
 
   if (nameEl) nameEl.textContent = `${user.username} (${user.donvi || ''})`;
-  if (avatarEl) avatarEl.textContent = (user.username || 'KT').substring(0, 2).toUpperCase();
+  if (avatarEl) avatarEl.textContent = (user.username || 'GS').substring(0, 2).toUpperCase();
 
   if (badgeEl) {
     badgeEl.className = 'user-role-badge';
@@ -92,13 +152,31 @@ function updateUserUI() {
     }
   }
 
-  // Permission: Only admin and editor can add items
+  // Admin button: only visible if user is admin
+  if (adminBtn) {
+    adminBtn.style.display = (user.role === 'admin') ? 'inline-flex' : 'none';
+  }
+
+  // Tab buttons visibility per permissions
+  if (tabList) tabList.style.display = canUser('list', 'view') ? 'inline-flex' : 'none';
+  if (tabMap) tabMap.style.display = canUser('map', 'view') ? 'inline-flex' : 'none';
+  if (tabBaohong) tabBaohong.style.display = canUser('baohong', 'view') ? 'inline-flex' : 'none';
+
+  // Permission: Add new items on list tab
   if (addBtn) {
-    if (user.role === 'view') {
-      addBtn.style.display = 'none';
-    } else {
-      addBtn.style.display = 'inline-flex';
-    }
+    addBtn.style.display = canUser('list', 'edit') ? 'inline-flex' : 'none';
+  }
+
+  // Permission: Refresh Baohong data
+  if (refreshBaohongBtn) {
+    refreshBaohongBtn.style.display = canUser('baohong', 'edit') ? 'inline-flex' : 'none';
+  }
+
+  // If currently on a forbidden tab, switch to the first allowed tab
+  if (!canUser(state.activeView, 'view')) {
+    if (canUser('list', 'view')) switchView('list');
+    else if (canUser('map', 'view')) switchView('map');
+    else if (canUser('baohong', 'view')) switchView('baohong');
   }
 }
 
@@ -255,14 +333,14 @@ function renderItemsTable(items) {
       gpsText = `<a href="https://maps.google.com/?q=${item.viDo},${item.kinhDo}" target="_blank" style="color: var(--accent); text-decoration: none; font-size: 0.775rem; font-weight: 500;" title="Mở Google Maps">📍 ${item.viDo.toFixed(4)}, ${item.kinhDo.toFixed(4)}</a>`;
     }
 
-    // Action buttons based on Role
+    // Action buttons based on Role & Permissions
     let actionButtons = `
       <button class="btn btn-sm btn-outline" onclick="openDetailModal('${item.id}')" title="Xem chi tiết">
         👁️
       </button>
     `;
 
-    if (role === 'admin' || role === 'editor') {
+    if (canUser('list', 'edit')) {
       actionButtons += `
         <button class="btn btn-sm btn-secondary" onclick="openEditModal('${item.id}')" title="Chỉnh sửa phiếu">
           ✏️
@@ -347,6 +425,10 @@ function resetFilters() {
 
 // ================= VIEW SWITCHER (LIST / MAP / BAOHONG) =================
 function switchView(viewName) {
+  if (!canUser(viewName, 'view')) {
+    showToast('Tài khoản của bạn không có quyền xem tab này!', 'warning');
+    return;
+  }
   state.activeView = viewName;
   const listContainer = document.getElementById('listViewContainer');
   const mapContainer = document.getElementById('mapViewContainer');
@@ -553,8 +635,8 @@ function getCurrentGPSLocation() {
 
 // ================= FORM MODAL (CREATE / EDIT) =================
 function openCreateModal() {
-  if (state.currentUser.role === 'view') {
-    showToast('Tài khoản quyền Xem (View) không được tạo phiếu mới!', 'warning');
+  if (!canUser('list', 'edit')) {
+    showToast('Tài khoản của bạn không có quyền tạo phiếu mới!', 'warning');
     return;
   }
 
@@ -576,8 +658,8 @@ function openCreateModal() {
 }
 
 async function openEditModal(id) {
-  if (state.currentUser.role === 'view') {
-    showToast('Tài khoản quyền Xem (View) không được chỉnh sửa phiếu!', 'warning');
+  if (!canUser('list', 'edit')) {
+    showToast('Tài khoản của bạn không có quyền chỉnh sửa phiếu!', 'warning');
     return;
   }
 
@@ -924,7 +1006,7 @@ async function openDetailModal(id) {
 
     // Check permissions for Edit button
     const editBtn = document.getElementById('detailEditBtn');
-    if (state.currentUser.role === 'view') {
+    if (!canUser('list', 'edit')) {
       editBtn.style.display = 'none';
     } else {
       editBtn.style.display = 'inline-flex';
@@ -942,6 +1024,10 @@ function closeDetailModal() {
 }
 
 function editFromDetail() {
+  if (!canUser('list', 'edit')) {
+    showToast('Tài khoản của bạn không có quyền chỉnh sửa phiếu!', 'warning');
+    return;
+  }
   if (!state.currentViewingItem) return;
   const id = state.currentViewingItem.id;
   closeDetailModal();
@@ -1901,5 +1987,170 @@ function toggleHeatmapBoundary() {
   }
   showToast(state.showBaohongBoundary ? 'Đã bật ranh giới TTVT trên bản đồ nhiệt' : 'Đã ẩn ranh giới TTVT', 'info');
 }
+
+// ================= ADMIN PERMISSIONS MANAGEMENT =================
+let adminUsersList = [];
+
+async function openAdminPermissionsModal() {
+  if (state.currentUser.role !== 'admin') {
+    showToast('Chỉ Quản trị viên (Admin) mới có quyền quản lý phân quyền!', 'warning');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/admin/users');
+    const data = await res.json();
+    if (!data.success) {
+      showToast('Không thể tải danh sách tài khoản: ' + data.message, 'error');
+      return;
+    }
+
+    adminUsersList = data.users || [];
+    renderAdminPermissionsTable(adminUsersList);
+    document.getElementById('adminPermissionsModal').classList.add('active');
+  } catch (err) {
+    showToast('Lỗi tải danh sách người dùng: ' + err.message, 'error');
+  }
+}
+
+function closeAdminPermissionsModal() {
+  const modal = document.getElementById('adminPermissionsModal');
+  if (modal) modal.classList.remove('active');
+}
+
+function renderAdminPermissionsTable(users) {
+  const tbody = document.getElementById('adminPermissionsTableBody');
+  if (!tbody) return;
+
+  tbody.innerHTML = '';
+
+  users.forEach((u) => {
+    const tr = document.createElement('tr');
+    const isAdmin = (u.role === 'admin' || u.username === 'kythuat');
+    
+    // Ensure permissions structure exists
+    const p = u.permissions || getDefaultPermissions(u.role);
+    const listView = p.list?.view ?? true;
+    const listEdit = p.list?.edit ?? false;
+    const mapView = p.map?.view ?? true;
+    const baohongView = p.baohong?.view ?? true;
+    const baohongEdit = p.baohong?.edit ?? false;
+
+    let roleBadge = '<span class="user-role-badge role-view" style="font-size: 0.7rem; padding: 2px 6px;">VIEW</span>';
+    if (u.role === 'admin') roleBadge = '<span class="user-role-badge role-admin" style="font-size: 0.7rem; padding: 2px 6px;">ADMIN</span>';
+    else if (u.role === 'editor') roleBadge = '<span class="user-role-badge role-editor" style="font-size: 0.7rem; padding: 2px 6px;">EDITOR</span>';
+
+    tr.innerHTML = `
+      <td>
+        <div style="font-weight: 700; color: #1e293b;">${escapeHtml(u.username)}</div>
+        <div style="font-size: 0.75rem; color: #64748b;">${escapeHtml(u.donvi || '')}</div>
+      </td>
+      <td style="text-align: center;">${roleBadge}</td>
+      
+      <!-- Tab List -->
+      <td style="text-align: center; border-left: 1px solid #e2e8f0;">
+        <label class="perm-checkbox-label">
+          <input type="checkbox" data-user="${escapeHtml(u.username)}" data-tab="list" data-perm="view" ${listView ? 'checked' : ''} ${isAdmin ? 'disabled' : ''}>
+          <span>Xem</span>
+        </label>
+        <span style="color: #cbd5e1; margin: 0 4px;">|</span>
+        <label class="perm-checkbox-label">
+          <input type="checkbox" data-user="${escapeHtml(u.username)}" data-tab="list" data-perm="edit" ${listEdit ? 'checked' : ''} ${isAdmin ? 'disabled' : ''}>
+          <span>Sửa</span>
+        </label>
+      </td>
+
+      <!-- Tab Map -->
+      <td style="text-align: center; border-left: 1px solid #e2e8f0;">
+        <label class="perm-checkbox-label">
+          <input type="checkbox" data-user="${escapeHtml(u.username)}" data-tab="map" data-perm="view" ${mapView ? 'checked' : ''} ${isAdmin ? 'disabled' : ''}>
+          <span>Xem</span>
+        </label>
+      </td>
+
+      <!-- Tab BaoHong -->
+      <td style="text-align: center; border-left: 1px solid #e2e8f0;">
+        <label class="perm-checkbox-label">
+          <input type="checkbox" data-user="${escapeHtml(u.username)}" data-tab="baohong" data-perm="view" ${baohongView ? 'checked' : ''} ${isAdmin ? 'disabled' : ''}>
+          <span>Xem</span>
+        </label>
+        <span style="color: #cbd5e1; margin: 0 4px;">|</span>
+        <label class="perm-checkbox-label">
+          <input type="checkbox" data-user="${escapeHtml(u.username)}" data-tab="baohong" data-perm="edit" ${baohongEdit ? 'checked' : ''} ${isAdmin ? 'disabled' : ''}>
+          <span>Làm mới</span>
+        </label>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+async function saveAdminPermissions() {
+  if (state.currentUser.role !== 'admin') {
+    showToast('Chỉ Quản trị viên (Admin) mới có quyền lưu cấu hình phân quyền!', 'error');
+    return;
+  }
+
+  const tbody = document.getElementById('adminPermissionsTableBody');
+  if (!tbody) return;
+
+  const usersMap = {};
+  adminUsersList.forEach(u => {
+    usersMap[u.username] = {
+      username: u.username,
+      permissions: {
+        list: { view: true, edit: false },
+        map: { view: true, edit: false },
+        baohong: { view: true, edit: false }
+      }
+    };
+  });
+
+  const inputs = tbody.querySelectorAll('input[type="checkbox"]');
+  inputs.forEach(input => {
+    const user = input.dataset.user;
+    const tab = input.dataset.tab;
+    const perm = input.dataset.perm;
+    if (usersMap[user] && usersMap[user].permissions[tab]) {
+      // If disabled (admin), always true
+      if (input.disabled) {
+        usersMap[user].permissions[tab][perm] = true;
+      } else {
+        usersMap[user].permissions[tab][perm] = input.checked;
+      }
+    }
+  });
+
+  const updatedUsers = Object.values(usersMap);
+
+  try {
+    const res = await fetch('/api/admin/users/permissions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ users: updatedUsers })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      showToast('Đã lưu cấu hình phân quyền người dùng thành công!', 'success');
+      closeAdminPermissionsModal();
+
+      // If current user permissions were changed, update local state
+      const currentUpdated = updatedUsers.find(u => u.username === state.currentUser.username);
+      if (currentUpdated) {
+        state.currentUser.permissions = currentUpdated.permissions;
+        saveStoredUser(state.currentUser);
+      }
+
+      updateUserUI();
+      renderItemsTable(state.items);
+    } else {
+      showToast('Lỗi lưu phân quyền: ' + data.message, 'error');
+    }
+  } catch (err) {
+    showToast('Lỗi kết nối khi lưu phân quyền: ' + err.message, 'error');
+  }
+}
+
 
 

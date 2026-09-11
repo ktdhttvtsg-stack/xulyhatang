@@ -138,14 +138,106 @@ app.post('/api/auth/login', (req, res) => {
   }
 
   // Success response
+  const defaultPerms = {
+    list: { view: true, edit: user.role !== 'view' },
+    map: { view: true, edit: user.role === 'admin' },
+    baohong: { view: true, edit: user.role === 'admin' }
+  };
+
   res.json({
     success: true,
     user: {
       username: user.username,
       donvi: user.donvi,
-      role: user.role
+      role: user.role,
+      permissions: user.permissions || defaultPerms
     }
   });
+});
+
+// 1b. Get Default Guest Info
+app.get('/api/auth/default-guest', (req, res) => {
+  const db = readDB();
+  const guest = (db.users || []).find(u => u.username === 'guest');
+  if (guest) {
+    return res.json({
+      success: true,
+      user: {
+        username: guest.username,
+        donvi: guest.donvi,
+        role: guest.role,
+        permissions: guest.permissions || {
+          list: { view: true, edit: false },
+          map: { view: true, edit: false },
+          baohong: { view: true, edit: false }
+        }
+      }
+    });
+  }
+  res.json({
+    success: true,
+    user: {
+      username: 'guest',
+      donvi: 'Khách xem',
+      role: 'view',
+      permissions: {
+        list: { view: true, edit: false },
+        map: { view: true, edit: false },
+        baohong: { view: true, edit: false }
+      }
+    }
+  });
+});
+
+// 1c. Get Users & Permissions (Admin only)
+app.get('/api/admin/users', (req, res) => {
+  try {
+    const db = readDB();
+    const users = (db.users || []).map(u => ({
+      username: u.username,
+      donvi: u.donvi,
+      role: u.role,
+      permissions: u.permissions || {
+        list: { view: true, edit: u.role !== 'view' },
+        map: { view: true, edit: u.role === 'admin' },
+        baohong: { view: true, edit: u.role === 'admin' }
+      }
+    }));
+    res.json({ success: true, users });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 1d. Update User Permissions per Tab (Admin only)
+app.post('/api/admin/users/permissions', (req, res) => {
+  try {
+    const { usersPermissions } = req.body;
+    if (!usersPermissions || typeof usersPermissions !== 'object') {
+      return res.status(400).json({ success: false, message: 'Dữ liệu phân quyền không hợp lệ!' });
+    }
+
+    const db = readDB();
+    (db.users || []).forEach(u => {
+      if (usersPermissions[u.username]) {
+        // Admin always maintains full permissions
+        if (u.role === 'admin') {
+          u.permissions = {
+            list: { view: true, edit: true },
+            map: { view: true, edit: true },
+            baohong: { view: true, edit: true }
+          };
+        } else {
+          u.permissions = usersPermissions[u.username];
+        }
+      }
+    });
+
+    writeDB(db);
+    res.json({ success: true, message: 'Cập nhật phân quyền theo từng tab thành công!' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 // 2. Get Reference Categories

@@ -1458,3 +1458,66 @@ body {
   margin-right: 6px;
 }
 
+/* Admin Permissions Button & Locked Box */
+.btn-outline-admin {
+  background: #fdf2f8;
+  border: 1.5px solid #ec4899;
+  color: #be185d;
+  font-weight: 700;
+  font-size: 0.78rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.btn-outline-admin:hover {
+  background: #fce7f3;
+  border-color: #db2777;
+  color: #9d174d;
+}
+
+.admin-editor-locked-notice {
+  margin-top: 0.85rem;
+  padding: 0.75rem 0.9rem;
+  background: #fffbeb;
+  border: 1px solid #fef08a;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.78rem;
+  color: #92400e;
+  line-height: 1.4;
+}
+
+.admin-editor-locked-notice .locked-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.admin-editor-locked-notice strong {
+  display: block;
+  margin-bottom: 2px;
+  color: #b45309;
+}
+
+.perm-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.perm-checkbox-label input[type="checkbox"] {
+  accent-color: var(--primary);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+

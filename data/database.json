@@ -75,19 +75,34 @@
       "donvi": "PKT",
       "username": "kythuat",
       "password": "123456",
-      "role": "admin"
+      "role": "admin",
+      "permissions": {
+        "list": { "view": true, "edit": true },
+        "map": { "view": true, "edit": true },
+        "baohong": { "view": true, "edit": true }
+      }
     },
     {
       "donvi": "TTVT An Đông",
       "username": "editor",
       "password": "123456",
-      "role": "editor"
+      "role": "editor",
+      "permissions": {
+        "list": { "view": true, "edit": true },
+        "map": { "view": true, "edit": false },
+        "baohong": { "view": true, "edit": false }
+      }
     },
     {
       "donvi": "guest",
       "username": "guest",
       "password": "123456",
-      "role": "view"
+      "role": "view",
+      "permissions": {
+        "list": { "view": true, "edit": false },
+        "map": { "view": true, "edit": false },
+        "baohong": { "view": true, "edit": false }
+      }
     }
   ],
   "items": [
