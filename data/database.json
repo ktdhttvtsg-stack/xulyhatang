@@ -77,9 +77,18 @@
       "password": "123456",
       "role": "admin",
       "permissions": {
-        "list": { "view": true, "edit": true },
-        "map": { "view": true, "edit": true },
-        "baohong": { "view": true, "edit": true }
+        "list": {
+          "view": true,
+          "edit": true
+        },
+        "map": {
+          "view": true,
+          "edit": true
+        },
+        "baohong": {
+          "view": true,
+          "edit": true
+        }
       }
     },
     {
@@ -88,9 +97,18 @@
       "password": "123456",
       "role": "editor",
       "permissions": {
-        "list": { "view": true, "edit": true },
-        "map": { "view": true, "edit": false },
-        "baohong": { "view": true, "edit": false }
+        "list": {
+          "view": true,
+          "edit": true
+        },
+        "map": {
+          "view": true,
+          "edit": false
+        },
+        "baohong": {
+          "view": true,
+          "edit": false
+        }
       }
     },
     {
@@ -99,9 +117,18 @@
       "password": "123456",
       "role": "view",
       "permissions": {
-        "list": { "view": true, "edit": false },
-        "map": { "view": true, "edit": false },
-        "baohong": { "view": true, "edit": false }
+        "list": {
+          "view": true,
+          "edit": false
+        },
+        "map": {
+          "view": false,
+          "edit": false
+        },
+        "baohong": {
+          "view": false,
+          "edit": false
+        }
       }
     }
   ],

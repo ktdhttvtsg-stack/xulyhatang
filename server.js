@@ -212,7 +212,15 @@ app.get('/api/admin/users', (req, res) => {
 // 1d. Update User Permissions per Tab (Admin only)
 app.post('/api/admin/users/permissions', (req, res) => {
   try {
-    const { usersPermissions } = req.body;
+    let usersPermissions = req.body.usersPermissions;
+    if (!usersPermissions && Array.isArray(req.body.users)) {
+      usersPermissions = {};
+      req.body.users.forEach(u => {
+        if (u && u.username) {
+          usersPermissions[u.username] = u.permissions;
+        }
+      });
+    }
     if (!usersPermissions || typeof usersPermissions !== 'object') {
       return res.status(400).json({ success: false, message: 'Dữ liệu phân quyền không hợp lệ!' });
     }
