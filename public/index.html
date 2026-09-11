@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản Lý Xử Lý Hạ Tầng Viễn Thông</title>
+  
+  <!-- Google Fonts Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet CSS for Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Top Navbar -->
+  <nav class="navbar">
+    <a href="#" class="nav-brand">
+      <div class="brand-icon">📶</div>
+      <div class="brand-text">
+        <h1>XỬ LÝ HẠ TẦNG VIỄN THÔNG</h1>
+        <span>Hệ thống Quản lý & Giám sát Hiện trường</span>
+      </div>
+    </a>
+
+    <div class="nav-tools">
+      <button class="nav-tab-btn active" id="tabListViewBtn" onclick="switchView('list')">
+        📋 Danh sách phiếu
+      </button>
+      <button class="nav-tab-btn" id="tabMapViewBtn" onclick="switchView('map')">
+        🗺️ Bản đồ hạ tầng
+      </button>
+
+      <!-- User Profile / Login -->
+      <div class="user-profile" id="userProfileBar">
+        <div class="user-avatar" id="userAvatar">KT</div>
+        <div class="user-info">
+          <div class="user-name" id="userNameDisplay">kythuat (PKT)</div>
+          <span class="user-role-badge role-admin" id="userRoleBadge">ADMIN</span>
+        </div>
+        <button class="btn btn-sm btn-outline" id="authBtn" onclick="handleAuthClick()" style="margin-left: 0.5rem;">
+          Đổi TK
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="main-wrapper">
+
+    <!-- KPI Stats Cards -->
+    <div class="stats-grid">
+      <div class="stat-card total">
+        <div class="stat-info">
+          <div class="stat-label">Tổng số phiếu</div>
+          <div class="stat-number" id="statTotal">0</div>
+        </div>
+        <div class="stat-icon-wrapper">📊</div>
+      </div>
+
+      <div class="stat-card warning">
+        <div class="stat-info">
+          <div class="stat-label">Chưa xử lý</div>
+          <div class="stat-number" id="statChuaXuLy">0</div>
+        </div>
+        <div class="stat-icon-wrapper">⚠️</div>
+      </div>
+
+      <div class="stat-card pending">
+        <div class="stat-info">
+          <div class="stat-label">Đang xử lý</div>
+          <div class="stat-number" id="statDangXuLy">0</div>
+        </div>
+        <div class="stat-icon-wrapper">⏳</div>
+      </div>
+
+      <div class="stat-card success">
+        <div class="stat-info">
+          <div class="stat-label">Đã hoàn thành</div>
+          <div class="stat-number" id="statDaHoanThanh">0</div>
+        </div>
+        <div class="stat-icon-wrapper">✅</div>
+      </div>
+    </div>
+
+    <!-- Actions & Filters Card -->
+    <div class="action-card">
+      <div class="action-header">
+        <div class="action-header-left">
+          <h2 class="section-title">
+            <span>⚡ Thao tác & Bộ lọc tra cứu</span>
+          </h2>
+        </div>
+        <div class="action-buttons">
+          <button class="btn btn-primary" id="addNewBtn" onclick="openCreateModal()">
+            ➕ Thêm phiếu mới
+          </button>
+          <button class="btn btn-success" id="exportExcelBtn" onclick="exportToExcel()">
+            📥 Xuất Excel
+          </button>
+          <button class="btn btn-outline" id="googleSheetBtn" onclick="openGoogleSheetModal()" style="border-color: #059669; color: #059669;" title="Cấu hình đồng bộ Google Sheet">
+            📊 Kết nối Google Sheet
+          </button>
+          <button class="btn btn-secondary" id="syncGoogleSheetBtn" onclick="syncAllToGoogleSheet()" title="Đẩy dữ liệu hiện tại lên Google Sheet">
+            🔄 Đẩy lên Sheet
+          </button>
+          <button class="btn btn-secondary" onclick="reloadAllData()">
+            🔄 Làm mới
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters Form -->
+      <div class="filter-grid">
+        <div class="form-group">
+          <label class="form-label">🔍 Tìm kiếm thông tin</label>
+          <input type="text" id="filterSearch" class="form-control" placeholder="Nhập tên cáp, địa bàn, địa chỉ, mã phiếu..." oninput="debounceFilter()">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">🏢 Phòng Hạ tầng</label>
+          <select id="filterPht" class="form-select" onchange="applyFilters()">
+            <option value="all">-- Tất cả Phòng HT --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">🏬 Tên TTVT</label>
+          <select id="filterTtvt" class="form-select" onchange="applyFilters()">
+            <option value="all">-- Tất cả TTVT --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">📦 Loại hạng mục</label>
+          <select id="filterHangmuc" class="form-select" onchange="applyFilters()">
+            <option value="all">-- Tất cả Hạng mục --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">📌 Tình trạng</label>
+          <select id="filterTinhTrang" class="form-select" onchange="applyFilters()">
+            <option value="all">-- Tất cả Tình trạng --</option>
+            <option value="Chưa xử lý">Chưa xử lý</option>
+            <option value="Đang xử lý">Đang xử lý</option>
+            <option value="Đã hoàn thành">Đã hoàn thành</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="justify-content: flex-end;">
+          <label class="form-label">&nbsp;</label>
+          <button class="btn btn-outline" onclick="resetFilters()" title="Đặt lại bộ lọc">
+            ✖ Bỏ lọc
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 1: Table List View -->
+    <div id="listViewContainer" class="table-container">
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 45px; text-align: center;">STT</th>
+              <th style="width: 14%;">Mã / Tuyến cáp</th>
+              <th style="width: 12%;">Phòng HT & TTVT</th>
+              <th style="width: 13%;">Hạng mục & Giải pháp</th>
+              <th style="width: 13%;">Khu vực & Địa chỉ</th>
+              <th style="width: 10%;">Tọa độ (GPS)</th>
+              <th style="width: 9%;">Tình trạng</th>
+              <th style="width: 17%;">Hiện trạng / Phương án / Kết quả</th>
+              <th style="width: 65px; text-align: center;">Hình ảnh</th>
+              <th style="text-align: right; width: 85px;">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="itemsTableBody">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty state placeholder -->
+      <div id="emptyTableState" class="empty-state" style="display: none;">
+        <div class="empty-state-icon">📂</div>
+        <h3>Không có phiếu xử lý nào phù hợp!</h3>
+        <p>Vui lòng thử thay đổi bộ lọc tìm kiếm hoặc tạo thêm phiếu xử lý mới.</p>
+      </div>
+    </div>
+
+    <!-- VIEW 2: Overall Interactive Map View -->
+    <div id="mapViewContainer" class="map-view-container">
+      <div id="overallMap"></div>
+      <div class="map-legend">
+        <div class="legend-title">Trạng thái xử lý</div>
+        <div class="legend-item">
+          <span class="legend-dot" style="background: #ef4444;"></span>
+          <span>Chưa xử lý (Khẩn/Cảnh báo)</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot" style="background: #f59e0b;"></span>
+          <span>Đang xử lý</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot" style="background: #10b981;"></span>
+          <span>Đã hoàn thành</span>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ================= MODAL: THÊM MỚI / CHỈNH SỬA PHIẾU ================= -->
+  <div class="modal-overlay" id="itemFormModal">
+    <div class="modal-content" style="max-width: 950px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="itemModalTitle">➕ Tạo Phiếu Xử Lý Hạ Tầng Mới</h3>
+        <button class="modal-close" onclick="closeItemModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <form id="itemForm" onsubmit="handleSaveItem(event)">
+          <input type="hidden" id="formItemId">
+
+          <!-- Section 1: Phân cấp quản lý -->
+          <div class="form-section">
+            <div class="form-section-title">🏢 1. Đơn vị & Hạng mục viễn thông</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Phòng Hạ tầng <span style="color:red">*</span></label>
+                <select id="formPht" class="form-select" required>
+                  <option value="">-- Chọn Phòng HT --</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Tên TTVT <span style="color:red">*</span></label>
+                <select id="formTtvt" class="form-select" required>
+                  <option value="">-- Chọn TTVT --</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Loại hạng mục <span style="color:red">*</span></label>
+                <select id="formHangmuc" class="form-select" required>
+                  <option value="">-- Chọn Loại Hạng mục --</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Mức ưu tiên</label>
+                <select id="formUutien" class="form-select">
+                  <!-- Loaded from uutien -->
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Vị trí & Tọa độ Bản đồ -->
+          <div class="form-section">
+            <div class="form-section-title">📍 2. Thông tin Tuyến cáp & Vị trí hiện trường</div>
+            
+            <div class="form-row">
+              <div class="form-group" style="grid-column: span 2;">
+                <label class="form-label">Tên tuyến cáp / kết cuối <span style="color:red">*</span></label>
+                <input type="text" id="formTenTuyenCap" class="form-control" placeholder="VD: Tuyến cáp quang F8 - Trạm Lạc Long Quân / Hộp cáp 50 đôi..." required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Khu vực / địa bàn</label>
+                <input type="text" id="formKhuVuc" class="form-control" placeholder="VD: Phường 10, Quận Tân Bình">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group" style="grid-column: span 3;">
+                <label class="form-label">Địa chỉ chi tiết hiện trường</label>
+                <input type="text" id="formDiaChi" class="form-control" placeholder="VD: Số 456 đường Lạc Long Quân, P.10, Q. Tân Bình (cột điện số 12)">
+              </div>
+            </div>
+
+            <!-- Tọa độ Kinh độ & Vĩ độ + Bản đồ tương tác -->
+            <div class="form-row" style="align-items: flex-end;">
+              <div class="form-group">
+                <label class="form-label">Kinh độ (Longitude)</label>
+                <input type="number" step="any" id="formKinhDo" class="form-control" placeholder="VD: 106.6492" oninput="updateFormMarkerFromInputs()">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Vĩ độ (Latitude)</label>
+                <input type="number" step="any" id="formViDo" class="form-control" placeholder="VD: 10.7785" oninput="updateFormMarkerFromInputs()">
+              </div>
+
+              <div class="form-group">
+                <button type="button" class="btn btn-primary" onclick="getCurrentGPSLocation()">
+                  📍 Lấy vị trí GPS hiện tại
+                </button>
+              </div>
+            </div>
+
+            <div class="map-picker-container">
+              <div id="formMap"></div>
+              <div class="map-picker-toolbar">
+                <span>💡 <em>Nhấn chuột vào bản đồ để chọn chính xác tọa độ vị trí cột/tuyến cáp.</em></span>
+                <span id="mapPickerCoords">Tọa độ: Chưa chọn</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 3: Phương án & Giải pháp -->
+          <div class="form-section">
+            <div class="form-section-title">⚙️ 3. Tình trạng & Phương án xử lý</div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Nhóm giải pháp đề xuất <span style="color:red">*</span></label>
+                <select id="formGiaiphap" class="form-select" required>
+                  <option value="">-- Chọn giải pháp --</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Tình trạng thực tế</label>
+                <select id="formTinhTrang" class="form-select">
+                  <option value="Chưa xử lý">Chưa xử lý</option>
+                  <option value="Đang xử lý">Đang xử lý</option>
+                  <option value="Đã hoàn thành">Đã hoàn thành</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0.85rem;">
+              <label class="form-label"><strong>Mô tả hiện trạng</strong> (Chi tiết khiếm khuyết, hư hỏng thực tế)</label>
+              <textarea id="formMoTaHienTrang" class="form-control" rows="2" placeholder="VD: Cáp bị chùng võng qua đường gây mất an toàn; Tủ cáp bị nghiêng, rỉ sét chân đế..."></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0.85rem;">
+              <label class="form-label"><strong>Phương án đề xuất</strong> (Giải pháp kỹ thuật / biện pháp thi công)</label>
+              <textarea id="formPhuongAn" class="form-control" rows="2" placeholder="VD: Kéo căng lại cáp và bổ sung gông treo cột; Gia cố móng bê tông mới..."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label"><strong>Kết quả xử lý</strong> (Nội dung đã hoàn thành hoặc tiến độ)</label>
+              <textarea id="formKetQua" class="form-control" rows="2" placeholder="VD: Đã hoàn thành thay thế tủ mới S01; Đang chờ xe thang hỗ trợ..."></textarea>
+            </div>
+          </div>
+
+          <!-- Section 4: Hình ảnh Before & After (Max 5 ảnh mỗi mục) -->
+          <div class="form-section">
+            <div class="form-section-title">📸 4. Hình ảnh Hiện trường (Tối đa 5 ảnh Before và 5 ảnh After)</div>
+
+            <div class="form-row">
+              <!-- Before Images -->
+              <div class="form-group">
+                <label class="form-label">
+                  <strong>Hình ảnh Before (Hiện trạng trước xử lý)</strong> 
+                  <span id="beforeCountText" style="color: var(--text-muted); font-size: 0.75rem;">(0/5 ảnh)</span>
+                </label>
+                
+                <div class="upload-zone" onclick="triggerFileInput('before')">
+                  <div class="upload-icon">📷</div>
+                  <div style="font-weight: 600; font-size: 0.85rem;">Nhấn để tải ảnh Before</div>
+                  <div class="upload-hint">Hỗ trợ JPG, PNG, WEBP (Tối đa 5 hình)</div>
+                </div>
+                <input type="file" id="inputUploadBefore" accept="image/*" multiple style="display: none;" onchange="handleFileSelected(event, 'before')">
+                
+                <div class="image-preview-grid" id="previewGridBefore"></div>
+              </div>
+
+              <!-- After Images -->
+              <div class="form-group">
+                <label class="form-label">
+                  <strong>Hình ảnh After (Sau khi xử lý)</strong>
+                  <span id="afterCountText" style="color: var(--text-muted); font-size: 0.75rem;">(0/5 ảnh)</span>
+                </label>
+                
+                <div class="upload-zone" onclick="triggerFileInput('after')">
+                  <div class="upload-icon">📸</div>
+                  <div style="font-weight: 600; font-size: 0.85rem;">Nhấn để tải ảnh After</div>
+                  <div class="upload-hint">Hỗ trợ JPG, PNG, WEBP (Tối đa 5 hình)</div>
+                </div>
+                <input type="file" id="inputUploadAfter" accept="image/*" multiple style="display: none;" onchange="handleFileSelected(event, 'after')">
+                
+                <div class="image-preview-grid" id="previewGridAfter"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeItemModal()">Hủy bỏ</button>
+            <button type="submit" class="btn btn-primary" id="saveItemSubmitBtn">💾 Lưu Phiếu Xử Lý</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: XEM CHI TIẾT PHIẾU ================= -->
+  <div class="modal-overlay" id="viewDetailModal">
+    <div class="modal-content" style="max-width: 850px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="detailModalTitle">🔍 Chi Tiết Phiếu Xử Lý</h3>
+        <button class="modal-close" onclick="closeDetailModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="detailModalBody">
+        <!-- Rendered by JS -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeDetailModal()">Đóng</button>
+        <button class="btn btn-primary" id="detailEditBtn" onclick="editFromDetail()">✏️ Chỉnh sửa phiếu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: ĐĂNG NHẬP / CHỌN TÀI KHOẢN ================= -->
+  <div class="modal-overlay" id="loginModal">
+    <div class="modal-content" style="max-width: 460px;">
+      <div class="modal-header">
+        <h3 class="modal-title">🔐 Đăng Nhập Hệ Thống</h3>
+        <button class="modal-close" onclick="closeLoginModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="handleLoginForm(event)">
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label class="form-label">Tên đăng nhập</label>
+            <input type="text" id="loginUsername" class="form-control" placeholder="VD: kythuat, editor, guest" required>
+          </div>
+          <div class="form-group" style="margin-bottom: 1.25rem;">
+            <label class="form-label">Mật khẩu</label>
+            <input type="password" id="loginPassword" class="form-control" placeholder="Nhập mật khẩu (mặc định: 123456)" required>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">
+            Đăng Nhập
+          </button>
+        </form>
+
+        <div class="quick-login-box">
+          <h4>Hoặc đăng nhập nhanh bằng tài khoản mẫu:</h4>
+          <div class="quick-users-list">
+            <button type="button" class="quick-user-btn" onclick="quickLogin('kythuat', '123456')">
+              <div>
+                <strong>kythuat</strong> (PKT)
+                <div style="font-size: 0.725rem; color: var(--text-muted);">Mật khẩu: 123456</div>
+              </div>
+              <span class="user-role-badge role-admin">ADMIN</span>
+            </button>
+
+            <button type="button" class="quick-user-btn" onclick="quickLogin('editor', '123456')">
+              <div>
+                <strong>editor</strong> (TTVT An Đông)
+                <div style="font-size: 0.725rem; color: var(--text-muted);">Mật khẩu: 123456</div>
+              </div>
+              <span class="user-role-badge role-editor">EDITOR</span>
+            </button>
+
+            <button type="button" class="quick-user-btn" onclick="quickLogin('guest', '123456')">
+              <div>
+                <strong>guest</strong> (Khách xem)
+                <div style="font-size: 0.725rem; color: var(--text-muted);">Mật khẩu: 123456</div>
+              </div>
+              <span class="user-role-badge role-view">VIEW ONLY</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden Form & Iframe for direct browser sync to Google Sheet (Bypasses Google Workspace 401 block) -->
+  <form id="googleSheetSyncForm" method="POST" target="googleSheetHiddenIframe" style="display: none;">
+    <input type="hidden" name="data" id="googleSheetSyncFormData">
+  </form>
+  <iframe name="googleSheetHiddenIframe" id="googleSheetHiddenIframe" style="display: none;"></iframe>
+
+  <!-- ================= MODAL: KẾT NỐI GOOGLE SHEET ================= -->
+  <div class="modal-overlay" id="googleSheetModal">
+    <div class="modal-content" style="max-width: 780px;">
+      <div class="modal-header">
+        <h3 class="modal-title">📊 Cấu Hình Đồng Bộ Trực Tiếp Với Google Sheet</h3>
+        <button class="modal-close" onclick="closeGoogleSheetModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem;">
+          <h4 style="color: #166534; font-size: 0.95rem; margin-bottom: 0.5rem;">⚡ Hướng dẫn cài đặt tự động cập nhật vào Google Sheet (1 phút)</h4>
+          <ol style="margin-left: 1.2rem; font-size: 0.85rem; line-height: 1.6; color: #1e293b;">
+            <li>Mở file Google Sheet: <a href="https://docs.google.com/spreadsheets/d/1lrZfpO-Rl51PchFukqr3ushwbt3Ara3_F1mmQDheKKw/edit#gid=84097234" target="_blank" style="color: #1d4ed8; font-weight: 600;">Link Sheet của bạn</a></li>
+            <li>Trên thanh menu của Google Sheet, chọn: <strong>Tiện ích mở rộng (Extensions)</strong> &gt; <strong>Apps Script</strong>.</li>
+            <li>Xóa hết mã có sẵn và dán đoạn mã bên dưới vào.</li>
+            <li>Nhấn <strong>Triển khai (Deploy)</strong> &gt; <strong>Tùy chọn triển khai mới (New deployment)</strong> &gt; Chọn loại <strong>Ứng dụng web (Web app)</strong>.</li>
+            <li>Tại mục <em>"Người có quyền truy cập (Who has access)"</em>: Chọn <strong>"Bất kỳ ai" (Anyone)</strong>, sau đó bấm <strong>Triển khai</strong>.</li>
+            <li>Sao chép <strong>URL của ứng dụng web (Web app URL)</strong> và dán vào ô bên dưới.</li>
+          </ol>
+        </div>
+
+        <!-- URL Input -->
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label" style="font-weight: 700;">🔗 URL Ứng dụng Web (Google Apps Script Web App URL)</label>
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="text" id="googleSheetUrlInput" class="form-control" placeholder="https://script.google.com/macros/s/AKfycb.../exec">
+            <button type="button" class="btn btn-primary" onclick="saveGoogleSheetUrl()" style="white-space: nowrap;">
+              💾 Lưu Cấu Hình
+            </button>
+          </div>
+          <div id="googleSheetStatusText" style="font-size: 0.775rem; margin-top: 0.35rem; color: var(--text-muted);">
+            Trạng thái: Đang kiểm tra...
+          </div>
+        </div>
+
+        <!-- Code Block -->
+        <div style="margin-top: 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+            <label class="form-label" style="font-weight: 700; margin: 0;">📜 Mã nguồn Google Apps Script (Copy để dán vào Google Sheet):</label>
+            <button type="button" class="btn btn-sm btn-outline" onclick="copyAppsScriptCode()">
+              📋 Sao Chép Mã
+            </button>
+          </div>
+          <textarea id="appsScriptCodeText" class="form-control" rows="8" readonly style="font-family: monospace; font-size: 0.75rem; background: #f8fafc;"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeGoogleSheetModal()">Đóng</button>
+        <button class="btn btn-success" onclick="syncAllToGoogleSheet()">
+          🚀 Đẩy Toàn Bộ Dữ Liệu Lên Sheet Ngay
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Lightbox Modal for Zoom -->
+  <div class="lightbox-overlay" id="lightboxModal" onclick="closeLightbox()">
+    <span class="lightbox-close">&times;</span>
+    <img id="lightboxImage" class="lightbox-img" src="" alt="Xem ảnh phóng to">
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- Main Application Script -->
+  <script src="js/app.js"></script>
+</body>
+</html>
