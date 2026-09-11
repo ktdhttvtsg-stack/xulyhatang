@@ -52,6 +52,9 @@
         <button class="btn btn-sm btn-outline" id="authBtn" onclick="handleAuthClick()" style="margin-left: 0.5rem;">
           Đổi TK
         </button>
+        <button class="btn btn-sm btn-outline" id="btnChangePassword" onclick="openChangePasswordModal()" style="display: none; margin-left: 0.35rem;" title="Đổi mật khẩu truy cập">
+          🔑 Đổi MK
+        </button>
         <button class="btn btn-sm btn-outline-admin" id="btnAdminPermissions" onclick="openAdminPermissionsModal()" style="display: none; margin-left: 0.35rem;" title="Phân quyền truy cập các tab cho người dùng">
           ⚙️ Phân Quyền
         </button>
@@ -886,6 +889,42 @@
     </div>
   </div>
 
+  <!-- ================= MODAL: ĐỔI MẬT KHẨU TRUY CẬP ================= -->
+  <div class="modal-overlay" id="changePasswordModal">
+    <div class="modal-content" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 class="modal-title">🔑 Đổi Mật Khẩu Truy Cập</h3>
+        <button class="modal-close" onclick="closeChangePasswordModal()">&times;</button>
+      </div>
+      <form id="changePasswordForm" onsubmit="handleChangePasswordSubmit(event)">
+        <div class="modal-body">
+          <div style="margin-bottom: 1rem;">
+            <label class="form-label" style="font-size: 0.8rem; font-weight: 600;">Tài khoản:</label>
+            <input type="text" id="changePasswordUsernameDisplay" class="form-control" readonly style="background: #f1f5f9; font-weight: 700; color: #1e293b;">
+          </div>
+          <div style="margin-bottom: 1rem;">
+            <label class="form-label" style="font-size: 0.8rem; font-weight: 600;">Mật khẩu hiện tại: <span class="required" style="color: #ef4444;">*</span></label>
+            <input type="password" id="changePasswordCurrent" class="form-control" placeholder="Nhập mật khẩu đang dùng" required autocomplete="current-password">
+          </div>
+          <div style="margin-bottom: 1rem;">
+            <label class="form-label" style="font-size: 0.8rem; font-weight: 600;">Mật khẩu mới: <span class="required" style="color: #ef4444;">*</span></label>
+            <input type="password" id="changePasswordNew" class="form-control" placeholder="Tối thiểu 4 ký tự" minlength="4" required autocomplete="new-password">
+          </div>
+          <div style="margin-bottom: 0.5rem;">
+            <label class="form-label" style="font-size: 0.8rem; font-weight: 600;">Xác nhận mật khẩu mới: <span class="required" style="color: #ef4444;">*</span></label>
+            <input type="password" id="changePasswordConfirm" class="form-control" placeholder="Nhập lại mật khẩu mới" minlength="4" required autocomplete="new-password">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeChangePasswordModal()">Hủy</button>
+          <button type="submit" class="btn btn-primary" id="btnSaveNewPassword">
+            💾 Cập Nhật Mật Khẩu
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Image Lightbox Modal for Zoom -->
   <div class="lightbox-overlay" id="lightboxModal" onclick="closeLightbox()">
     <span class="lightbox-close">&times;</span>
@@ -901,6 +940,6 @@
   <script src="js/leaflet-heat.js"></script>
   
   <!-- Main Application Script -->
-  <script src="js/app.js?v=1.4"></script>
+  <script src="js/app.js?v=1.6"></script>
 </body>
 </html>

@@ -182,6 +182,12 @@ function updateUserUI() {
     adminBtn.style.display = (user.role === 'admin') ? 'inline-flex' : 'none';
   }
 
+  // Change password button: available for all users except guest
+  const changePwBtn = document.getElementById('btnChangePassword');
+  if (changePwBtn) {
+    changePwBtn.style.display = (user.username && user.username !== 'guest') ? 'inline-flex' : 'none';
+  }
+
   // Tab buttons visibility per permissions
   if (tabList) tabList.style.display = canUser('list', 'view') ? 'inline-flex' : 'none';
   if (tabMap) tabMap.style.display = canUser('map', 'view') ? 'inline-flex' : 'none';
@@ -1166,6 +1172,81 @@ async function executeLogin(username, password) {
   }
 }
 
+// ================= CHANGE PASSWORD MODAL =================
+function openChangePasswordModal() {
+  const user = state.currentUser;
+  if (!user || user.username === 'guest') {
+    showToast('Tài khoản khách (guest) không được phép đổi mật khẩu!', 'warning');
+    return;
+  }
+
+  const usernameDisplay = document.getElementById('changePasswordUsernameDisplay');
+  if (usernameDisplay) {
+    usernameDisplay.value = `${user.username} (${user.donvi || ''})`;
+  }
+
+  document.getElementById('changePasswordCurrent').value = '';
+  document.getElementById('changePasswordNew').value = '';
+  document.getElementById('changePasswordConfirm').value = '';
+  document.getElementById('changePasswordModal').classList.add('active');
+}
+
+function closeChangePasswordModal() {
+  const modal = document.getElementById('changePasswordModal');
+  if (modal) modal.classList.remove('active');
+}
+
+async function handleChangePasswordSubmit(e) {
+  e.preventDefault();
+  const currentPassword = document.getElementById('changePasswordCurrent').value.trim();
+  const newPassword = document.getElementById('changePasswordNew').value.trim();
+  const confirmPassword = document.getElementById('changePasswordConfirm').value.trim();
+
+  if (!currentPassword || !newPassword) {
+    showToast('Vui lòng nhập đầy đủ mật khẩu!', 'warning');
+    return;
+  }
+
+  if (newPassword.length < 4) {
+    showToast('Mật khẩu mới phải có ít nhất 4 ký tự!', 'warning');
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    showToast('Mật khẩu mới và mật khẩu xác nhận không trùng khớp!', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('btnSaveNewPassword');
+  btn.disabled = true;
+  btn.textContent = '⏳ Đang lưu...';
+
+  try {
+    const res = await fetch('/api/auth/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: state.currentUser.username,
+        currentPassword,
+        newPassword
+      })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      showToast('Đổi mật khẩu thành công! Mật khẩu mới đã được cập nhật.', 'success');
+      closeChangePasswordModal();
+    } else {
+      showToast('Đổi mật khẩu thất bại: ' + data.message, 'error');
+    }
+  } catch (err) {
+    showToast('Lỗi kết nối khi đổi mật khẩu: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '💾 Cập Nhật Mật Khẩu';
+  }
+}
+
 // ================= EXCEL EXPORT =================
 function exportToExcel() {
   showToast('Đang tạo và tải file Excel theo mẫu Google Sheet...', 'info');
@@ -2013,7 +2094,7 @@ async function loadOverallBoundary() {
   state.overallBoundaryLayer = createTtvtBoundaryLayer(geojson);
   if (state.showOverallBoundary) {
     state.overallBoundaryLayer.addTo(state.overallMap);
-    if (state.overallMarkersLayer) {
+    if (state.overallMarkersLayer && typeof state.overallMarkersLayer.bringToFront === 'function') {
       state.overallMarkersLayer.bringToFront();
     }
   }
@@ -2030,7 +2111,9 @@ function toggleOverallBoundary() {
   if (state.overallBoundaryLayer && state.overallMap) {
     if (state.showOverallBoundary) {
       state.overallBoundaryLayer.addTo(state.overallMap);
-      if (state.overallMarkersLayer) state.overallMarkersLayer.bringToFront();
+      if (state.overallMarkersLayer && typeof state.overallMarkersLayer.bringToFront === 'function') {
+        state.overallMarkersLayer.bringToFront();
+      }
     } else {
       state.overallMap.removeLayer(state.overallBoundaryLayer);
     }
@@ -2050,7 +2133,7 @@ async function loadHeatmapBoundary() {
   state.baohongBoundaryLayer = createTtvtBoundaryLayer(geojson);
   if (state.showBaohongBoundary) {
     state.baohongBoundaryLayer.addTo(state.baohongHeatmapMap);
-    if (state.baohongHotspotsLayer) {
+    if (state.baohongHotspotsLayer && typeof state.baohongHotspotsLayer.bringToFront === 'function') {
       state.baohongHotspotsLayer.bringToFront();
     }
   }
@@ -2067,7 +2150,9 @@ function toggleHeatmapBoundary() {
   if (state.baohongBoundaryLayer && state.baohongHeatmapMap) {
     if (state.showBaohongBoundary) {
       state.baohongBoundaryLayer.addTo(state.baohongHeatmapMap);
-      if (state.baohongHotspotsLayer) state.baohongHotspotsLayer.bringToFront();
+      if (state.baohongHotspotsLayer && typeof state.baohongHotspotsLayer.bringToFront === 'function') {
+        state.baohongHotspotsLayer.bringToFront();
+      }
     } else {
       state.baohongHeatmapMap.removeLayer(state.baohongBoundaryLayer);
     }

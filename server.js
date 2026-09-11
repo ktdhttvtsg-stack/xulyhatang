@@ -25,6 +25,12 @@ const UPLOAD_AFTER_DIR = path.join(UPLOAD_DIR, 'after');
   }
 });
 
+// No-cache middleware for rapid development
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  next();
+});
+
 // Serve static
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(UPLOAD_DIR));
@@ -155,6 +161,42 @@ app.post('/api/auth/login', (req, res) => {
       permissions: user.permissions || defaultPerms
     }
   });
+});
+
+// 1a. Change Password
+app.post('/api/auth/change-password', (req, res) => {
+  try {
+    const { username, currentPassword, newPassword } = req.body;
+    if (!username || !currentPassword || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Vui lòng điền đầy đủ thông tin mật khẩu!' });
+    }
+
+    if (username.toLowerCase() === 'guest') {
+      return res.status(400).json({ success: false, message: 'Tài khoản khách (guest) không được phép đổi mật khẩu!' });
+    }
+
+    if (newPassword.length < 4) {
+      return res.status(400).json({ success: false, message: 'Mật khẩu mới phải có ít nhất 4 ký tự!' });
+    }
+
+    const db = readDB();
+    const user = (db.users || []).find(u => u.username.toLowerCase() === username.trim().toLowerCase());
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy tài khoản người dùng!' });
+    }
+
+    if (user.password !== currentPassword.trim()) {
+      return res.status(400).json({ success: false, message: 'Mật khẩu hiện tại không chính xác!' });
+    }
+
+    user.password = newPassword.trim();
+    writeDB(db);
+
+    res.json({ success: true, message: 'Đổi mật khẩu thành công! Mật khẩu mới đã được cập nhật.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 // 1b. Get Default Guest Info
