@@ -322,141 +322,242 @@
       "kyhieu": "S2_MECF0101/S01",
       "total": 42,
       "mnv": 0,
-      "rate": "0.0"
+      "rate": "0.0",
+      "lat": 10.79899,
+      "lng": 106.82825,
+      "ttvt": "Trung tâm Viễn thông An Khánh",
+      "tovt": "Tổ Kỹ thuật Địa bàn Long Trường",
+      "ma_kv": "AKH042"
     },
     {
       "rank": 2,
       "kyhieu": "WGTF010101000001",
       "total": 38,
       "mnv": 0,
-      "rate": "0.0"
+      "rate": "0.0",
+      "lat": 10.68941,
+      "lng": 106.58598,
+      "ttvt": "Trung tâm Viễn thông Bình Chánh",
+      "tovt": "Tổ Kỹ thuật Địa bàn Tân Nhựt 1",
+      "ma_kv": "BCH049_BC23002"
     },
     {
       "rank": 3,
       "kyhieu": "S2-O-LUXF010000000002/S03",
       "total": 23,
       "mnv": 0,
-      "rate": "0.0"
+      "rate": "0.0",
+      "lat": 10.7861,
+      "lng": 106.70992,
+      "ttvt": "Trung Tâm Viễn thông Sài Gòn",
+      "tovt": "Tổ Kỹ thuật Địa bàn Sài Gòn 1",
+      "ma_kv": "SGN102"
     },
     {
       "rank": 4,
       "kyhieu": "LTMF130000000015",
       "total": 21,
       "mnv": 0,
-      "rate": "0.0"
+      "rate": "0.0",
+      "lat": 10.8473,
+      "lng": 106.84362,
+      "ttvt": "Trung Tâm Viễn thông Thủ Đức",
+      "tovt": "Tổ Kỹ thuật Địa bàn Long Bình",
+      "ma_kv": "TDU032"
     },
     {
       "rank": 5,
       "kyhieu": "LTMF510000000001/S01",
       "total": 19,
       "mnv": 0,
-      "rate": "0.0"
+      "rate": "0.0",
+      "lat": 10.83681,
+      "lng": 106.83057,
+      "ttvt": "Trung Tâm Viễn thông Thủ Đức",
+      "tovt": "Tổ Kỹ thuật Địa bàn Long Bình",
+      "ma_kv": "TDU035"
     },
     {
       "rank": 6,
       "kyhieu": "T-TAN-BUG-TU",
       "total": 18,
       "mnv": 11,
-      "rate": "61.1"
+      "rate": "61.1",
+      "lat": 10.93661,
+      "lng": 106.67175,
+      "ttvt": "Trung tâm Viễn thông Thuận An",
+      "tovt": "Tổ Kỹ thuật Địa bàn Thuận An",
+      "ma_kv": "TAN071"
     },
     {
       "rank": 7,
       "kyhieu": "LTMF140001000002",
       "total": 17,
       "mnv": 0,
-      "rate": "0.0"
+      "rate": "0.0",
+      "lat": 10.83839,
+      "lng": 106.83908,
+      "ttvt": "Trung Tâm Viễn thông Thủ Đức",
+      "tovt": "Tổ Kỹ thuật Địa bàn Long Bình",
+      "ma_kv": "TDU036"
     },
     {
       "rank": 8,
       "kyhieu": "S2-VLOF255901000001/S03",
       "total": 17,
       "mnv": 17,
-      "rate": "100.0"
+      "rate": "100.0",
+      "lat": 10.80513,
+      "lng": 106.59214,
+      "ttvt": "Trung tâm Viễn thông An Lạc",
+      "tovt": "Tổ Kỹ thuật Địa bàn Bình Tân",
+      "ma_kv": "ALA031"
     },
     {
       "rank": 9,
       "kyhieu": "S2.COG11104.01-16",
       "total": 17,
       "mnv": 0,
-      "rate": "0.0"
+      "rate": "0.0",
+      "lat": 8.71369,
+      "lng": 106.63509,
+      "ttvt": "Trung tâm Viễn thông Vũng Tàu",
+      "tovt": "Tổ đa nhiệm Côn Đảo",
+      "ma_kv": "VTU012"
     },
     {
       "rank": 10,
       "kyhieu": "VGKF040000000004",
       "total": 16,
       "mnv": 0,
-      "rate": "0.0"
+      "rate": "0.0",
+      "lat": 10.84779,
+      "lng": 106.84398,
+      "ttvt": "Trung Tâm Viễn thông Thủ Đức",
+      "tovt": "Tổ Kỹ thuật Địa bàn Long Bình",
+      "ma_kv": "TDU037"
     },
     {
       "rank": 11,
       "kyhieu": "H-DGOF010101000001",
       "total": 16,
       "mnv": 0,
-      "rate": "0.0"
+      "rate": "0.0",
+      "lat": 10.82014,
+      "lng": 106.5846,
+      "ttvt": "Trung tâm Viễn thông An Lạc",
+      "tovt": "Tổ Kỹ thuật Địa bàn Vĩnh Lộc",
+      "ma_kv": "ALA056"
     },
     {
       "rank": 12,
       "kyhieu": "LTMF130000000016",
       "total": 16,
       "mnv": 0,
-      "rate": "0.0"
+      "rate": "0.0",
+      "lat": 10.84719,
+      "lng": 106.84444,
+      "ttvt": "Trung Tâm Viễn thông Thủ Đức",
+      "tovt": "Tổ Kỹ thuật Địa bàn Long Bình",
+      "ma_kv": "TDU032"
     },
     {
       "rank": 13,
       "kyhieu": "VGKF010000000001",
       "total": 15,
       "mnv": 0,
-      "rate": "0.0"
+      "rate": "0.0",
+      "lat": 10.84779,
+      "lng": 106.84398,
+      "ttvt": "Trung Tâm Viễn thông Thủ Đức",
+      "tovt": "Tổ Kỹ thuật Địa bàn Long Bình",
+      "ma_kv": "TDU037"
     },
     {
       "rank": 14,
       "kyhieu": "T-TDM-CTMQ-01-B01",
       "total": 15,
       "mnv": 0,
-      "rate": "0.0"
+      "rate": "0.0",
+      "lat": 11.00324,
+      "lng": 106.67998,
+      "ttvt": "Trung tâm Viễn thông Thủ Dầu Một",
+      "tovt": "Tổ Kỹ thuật Địa bàn Bình Dương",
+      "ma_kv": "TDM010"
     },
     {
       "rank": 15,
       "kyhieu": "VGKF050000000005",
       "total": 15,
       "mnv": 0,
-      "rate": "0.0"
+      "rate": "0.0",
+      "lat": 10.84779,
+      "lng": 106.84398,
+      "ttvt": "Trung Tâm Viễn thông Thủ Đức",
+      "tovt": "Tổ Kỹ thuật Địa bàn Long Bình",
+      "ma_kv": "TDU037"
     },
     {
       "rank": 16,
       "kyhieu": "LTMF130000000011",
       "total": 14,
       "mnv": 0,
-      "rate": "0.0"
+      "rate": "0.0",
+      "lat": 10.84701,
+      "lng": 106.84519,
+      "ttvt": "Trung Tâm Viễn thông Thủ Đức",
+      "tovt": "Tổ Kỹ thuật Địa bàn Long Bình",
+      "ma_kv": "TDU032"
     },
     {
       "rank": 17,
       "kyhieu": "KHWF071507000010/S01",
       "total": 14,
       "mnv": 0,
-      "rate": "0.0"
+      "rate": "0.0",
+      "lat": 10.75596,
+      "lng": 106.70183,
+      "ttvt": "Trung Tâm Viễn thông Nam Sài Gòn",
+      "tovt": "Tổ Kỹ thuật Địa bàn Vĩnh Hội",
+      "ma_kv": "NSG004_NS21009"
     },
     {
       "rank": 18,
       "kyhieu": "GDIF320705000064/S01",
       "total": 14,
       "mnv": 0,
-      "rate": "0.0"
+      "rate": "0.0",
+      "lat": 10.806,
+      "lng": 106.66751,
+      "ttvt": "Trung tâm Viễn thông Phú Nhuận",
+      "tovt": "Tổ Kỹ thuật Địa bàn Tân Sơn Hòa",
+      "ma_kv": "PNH044"
     },
     {
       "rank": 19,
       "kyhieu": "S1_KHWF071507000010/S02",
       "total": 13,
       "mnv": 0,
-      "rate": "0.0"
+      "rate": "0.0",
+      "lat": 10.75598,
+      "lng": 106.70172,
+      "ttvt": "Trung Tâm Viễn thông Nam Sài Gòn",
+      "tovt": "Tổ Kỹ thuật Địa bàn Vĩnh Hội",
+      "ma_kv": "NSG004"
     },
     {
       "rank": 20,
       "kyhieu": "HBCF232901000001/S01",
       "total": 13,
       "mnv": 12,
-      "rate": "92.3"
+      "rate": "92.3",
+      "lat": 10.83802,
+      "lng": 106.73488,
+      "ttvt": "Trung Tâm Viễn thông Thủ Đức",
+      "tovt": "Tổ Kỹ thuật Địa bàn Hiệp Bình 1",
+      "ma_kv": "TDU005_TD21010"
     }
   ],
-  "updatedAt": "2026-09-11T04:16:32.094Z"
+  "kyhieuHotspotsCount": 1947,
+  "updatedAt": "2026-09-11T04:34:06.079Z"
 }

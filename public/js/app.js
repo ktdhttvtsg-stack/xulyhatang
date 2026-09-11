@@ -23,8 +23,14 @@ const state = {
   overallMap: null,
   overallMarkersLayer: null,
   formMap: null,
-  formMarker: null,
-  activeView: 'list' // 'list' | 'map'
+  activeView: 'list', // 'list' | 'map'
+  baohongHeatmapMap: null,
+  baohongHeatLayer: null,
+  baohongHotspotsLayer: null,
+  showKyhieuHotspots: true,
+  currentHeatType: 'mnv',
+  heatRadius: 25,
+  baohongHotspotsData: []
 };
 
 // ================= INITIALIZATION =================
@@ -1451,13 +1457,14 @@ function renderKyhieuTable(list) {
     else if (rank === 3) rankBadgeClass = 'rank-badge-3';
 
     const rateNum = parseFloat(item.rate) || 0;
+    const hasLocation = (item.lat && item.lng);
     return `
-      <tr>
+      <tr ${hasLocation ? `style="cursor: pointer;" onclick="focusKyhieuOnMap('${escapeHtml(item.kyhieu)}', ${item.lat}, ${item.lng})"` : ''} title="${hasLocation ? 'Nhấn để định vị ký hiệu này trên bản đồ nhiệt' : ''}">
         <td style="text-align: center;">
           <span class="rank-badge ${rankBadgeClass}">${rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank}</span>
         </td>
         <td style="font-weight: 600; color: #1e293b; font-family: monospace; font-size: 0.825rem;">
-          ${escapeHtml(item.kyhieu)}
+          ${escapeHtml(item.kyhieu)} ${hasLocation ? '<span style="font-size: 11px; color: #3b82f6;">📍</span>' : ''}
         </td>
         <td style="text-align: right; font-weight: 600;">${Number(item.total).toLocaleString('vi-VN')}</td>
         <td style="text-align: right; font-weight: 700; color: #dc2626;">${Number(item.mnv).toLocaleString('vi-VN')}</td>
@@ -1474,6 +1481,19 @@ function renderKyhieuTable(list) {
   }).join('');
 }
 
+function focusKyhieuOnMap(kyhieu, lat, lng) {
+  if (!state.baohongHeatmapMap) return;
+  state.baohongHeatmapMap.setView([lat, lng], 15);
+  setTimeout(() => {
+    renderKyhieuHotspotMarkers();
+    // Smooth scroll back up to map
+    const mapSection = document.getElementById('baohongHeatmap');
+    if (mapSection) {
+      mapSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, 200);
+}
+
 // ================= LEAFLET HEATMAP LOGIC =================
 function initBaohongHeatmap() {
   if (state.baohongHeatmapMap) return;
@@ -1488,6 +1508,16 @@ function initBaohongHeatmap() {
     maxZoom: 18,
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(state.baohongHeatmapMap);
+
+  // Group layer for Kyhieu hotspots markers
+  state.baohongHotspotsLayer = L.layerGroup().addTo(state.baohongHeatmapMap);
+
+  // When zooming or panning, refresh visible markers if needed
+  state.baohongHeatmapMap.on('zoomend moveend', () => {
+    if (state.showKyhieuHotspots) {
+      renderKyhieuHotspotMarkers();
+    }
+  });
 }
 
 async function loadHeatmapLayer(type = 'mnv') {
@@ -1541,10 +1571,139 @@ async function loadHeatmapLayer(type = 'mnv') {
     } else {
       console.warn('L.heatLayer is not loaded');
     }
+
+    // Load Kyhieu Hotspots
+    await loadKyhieuHotspots();
+
   } catch (err) {
     console.error('Lỗi tải dữ liệu heatmap:', err);
     showToast('Lỗi tải dữ liệu bản đồ nhiệt: ' + err.message, 'error');
   }
+}
+
+// ================= KYHIEU HOTSPOTS ON HEATMAP =================
+async function loadKyhieuHotspots() {
+  try {
+    const res = await fetch('/api/baohong/kyhieu-hotspots?min=3');
+    const result = await res.json();
+    if (result.success && Array.isArray(result.data)) {
+      state.baohongHotspotsData = result.data;
+      const countEl = document.getElementById('kyhieuHotspotsCountDisplay');
+      if (countEl) countEl.textContent = result.data.length.toLocaleString('vi-VN');
+      renderKyhieuHotspotMarkers();
+    }
+  } catch (err) {
+    console.error('Lỗi tải kyhieu hotspots:', err);
+  }
+}
+
+function renderKyhieuHotspotMarkers() {
+  if (!state.baohongHotspotsLayer || !state.baohongHeatmapMap) return;
+  state.baohongHotspotsLayer.clearLayers();
+
+  if (!state.showKyhieuHotspots) return;
+
+  const spots = state.baohongHotspotsData || [];
+  if (spots.length === 0) return;
+
+  const currentZoom = state.baohongHeatmapMap.getZoom();
+  const bounds = state.baohongHeatmapMap.getBounds();
+
+  // Dynamic threshold based on zoom level:
+  // Zoom <= 10: only top severe spots (count >= 12 or mnv >= 8)
+  // Zoom 11-12: count >= 6 or mnv >= 4
+  // Zoom 13-14: count >= 3 or mnv >= 2
+  // Zoom >= 15: show all available hotspots
+  let minCount = 10;
+  if (currentZoom >= 15) minCount = 2;
+  else if (currentZoom >= 13) minCount = 3;
+  else if (currentZoom >= 11) minCount = 6;
+  else minCount = 12;
+
+  // Filter spots inside visible bounds and meeting threshold
+  let visibleSpots = spots.filter(s => {
+    if (!bounds.contains([s.lat, s.lng])) return false;
+    if (state.currentHeatType === 'mnv') {
+      return s.mnv >= Math.max(2, Math.floor(minCount / 2));
+    }
+    return s.total >= minCount || s.mnv >= 3;
+  });
+
+  // Limit max rendered markers to 120 for smooth performance
+  if (visibleSpots.length > 120) {
+    visibleSpots.sort((a, b) => (state.currentHeatType === 'mnv' ? b.mnv - a.mnv : b.total - a.total));
+    visibleSpots = visibleSpots.slice(0, 120);
+  }
+
+  visibleSpots.forEach(spot => {
+    const isHighMNV = (spot.mnv >= 3);
+    const countBadge = state.currentHeatType === 'mnv' 
+      ? `⚡ ${spot.mnv} MNV` 
+      : `${spot.total} sự cố${spot.mnv > 0 ? ` (${spot.mnv} MNV)` : ''}`;
+
+    const iconHtml = `
+      <div class="kyhieu-marker-badge ${isHighMNV ? 'high-mnv' : ''}" title="${escapeHtml(spot.kyhieu)}">
+        <span>${escapeHtml(spot.kyhieu)}</span>
+        <span class="kyhieu-badge-count">${countBadge}</span>
+      </div>
+    `;
+
+    const customIcon = L.divIcon({
+      className: 'kyhieu-map-marker',
+      html: iconHtml,
+      iconSize: [0, 0],
+      iconAnchor: [0, 0]
+    });
+
+    const marker = L.marker([spot.lat, spot.lng], { icon: customIcon });
+
+    const popupHtml = `
+      <div class="kyhieu-popup-content">
+        <div class="kyhieu-popup-title">🏷️ ${escapeHtml(spot.kyhieu)}</div>
+        <div class="kyhieu-popup-row">
+          <span>🏢 Trung tâm VT:</span>
+          <strong>${escapeHtml(spot.ttvt || 'Chưa rõ')}</strong>
+        </div>
+        <div class="kyhieu-popup-row">
+          <span>🛠️ Tổ KTĐB:</span>
+          <strong>${escapeHtml(spot.tovt || 'Chưa rõ')}</strong>
+        </div>
+        <div class="kyhieu-popup-row">
+          <span>📍 Mã khu vực:</span>
+          <strong style="color:#0284c7; font-family:monospace;">${escapeHtml(spot.ma_kv || 'Chưa rõ')}</strong>
+        </div>
+        <div class="kyhieu-popup-row" style="margin-top: 5px; padding-top: 4px; border-top: 1px dashed #cbd5e1;">
+          <span>📋 Tổng số lần hư:</span>
+          <strong style="font-size: 13px; color: #1e293b;">${spot.total} lần</strong>
+        </div>
+        <div class="kyhieu-popup-row">
+          <span>⚡ Hư do MNV (mã 24):</span>
+          <strong style="font-size: 13px; color: #dc2626;">${spot.mnv} lần (${spot.rate}%)</strong>
+        </div>
+        <div class="kyhieu-popup-row">
+          <span>🌐 Tọa độ:</span>
+          <span style="font-size: 10px; color: #64748b;">${spot.lat}, ${spot.lng}</span>
+        </div>
+      </div>
+    `;
+
+    marker.bindPopup(popupHtml, { maxWidth: 280 });
+    state.baohongHotspotsLayer.addLayer(marker);
+  });
+}
+
+function toggleKyhieuHotspots() {
+  state.showKyhieuHotspots = !state.showKyhieuHotspots;
+  const btn = document.getElementById('btnToggleKyhieuLabels');
+  if (btn) {
+    if (state.showKyhieuHotspots) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  }
+  renderKyhieuHotspotMarkers();
+  showToast(state.showKyhieuHotspots ? 'Đã bật hiển thị ký hiệu trên vùng mật độ cao' : 'Đã ẩn ký hiệu trên bản đồ nhiệt', 'info');
 }
 
 function switchHeatmapType(type) {
@@ -1568,13 +1727,14 @@ function updateHeatmapRadius(val) {
 function jumpHeatmap(loc) {
   if (!state.baohongHeatmapMap) return;
   if (loc === 'hcm') {
-    state.baohongHeatmapMap.setView([10.8231, 106.6297], 11);
+    state.baohongHeatmapMap.setView([10.8231, 106.6297], 12);
   } else if (loc === 'bd') {
-    state.baohongHeatmapMap.setView([11.1500, 106.6500], 11);
+    state.baohongHeatmapMap.setView([10.9800, 106.6700], 12);
   } else if (loc === 'vt') {
-    state.baohongHeatmapMap.setView([10.5000, 107.2500], 10);
+    state.baohongHeatmapMap.setView([10.5000, 107.2500], 11);
   } else {
-    state.baohongHeatmapMap.setView([10.7769, 106.6953], 9);
+    state.baohongHeatmapMap.setView([10.7769, 106.6953], 10);
   }
+  setTimeout(renderKyhieuHotspotMarkers, 200);
 }
 

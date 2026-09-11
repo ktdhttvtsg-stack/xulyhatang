@@ -294,11 +294,18 @@
             </div>
             <!-- Quick Locations -->
             <div class="heatmap-jump-group">
-              <span style="font-size: 0.8rem; font-weight: 600; color: #64748b;">Định vị nhanh:</span>
+              <span style="font-size: 0.8rem; font-weight: 600; color: #64748b;">Định vị:</span>
               <button class="btn btn-sm btn-outline-chip" onclick="jumpHeatmap('all')">Toàn cảnh</button>
               <button class="btn btn-sm btn-outline-chip" onclick="jumpHeatmap('hcm')">TP.HCM</button>
               <button class="btn btn-sm btn-outline-chip" onclick="jumpHeatmap('bd')">Bình Dương</button>
-              <button class="btn btn-sm btn-outline-chip" onclick="jumpHeatmap('vt')">Bà Rịa - Vũng Tàu</button>
+              <button class="btn btn-sm btn-outline-chip" onclick="jumpHeatmap('vt')">BR-VT</button>
+            </div>
+
+            <!-- Toggle Show Kyhieu Labels/Pins -->
+            <div class="heatmap-kyhieu-toggle-group">
+              <button class="btn btn-sm btn-kyhieu-toggle active" id="btnToggleKyhieuLabels" onclick="toggleKyhieuHotspots()">
+                🏷️ Hiển thị Ký hiệu mật độ cao (<span id="kyhieuHotspotsCountDisplay">0</span>)
+              </button>
             </div>
           </div>
         </div>

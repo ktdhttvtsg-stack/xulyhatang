@@ -100,19 +100,36 @@ async function processData(forceReload = false) {
       if (ma_kv) kvMNV[ma_kv] = (kvMNV[ma_kv] || 0) + 1;
     }
 
+    const lat = parseFloat(rawVido);
+    const lng = parseFloat(rawKinhdo);
+    const hasValidCoords = (!isNaN(lat) && !isNaN(lng) && lat > 8 && lat < 24 && lng > 102 && lng < 115);
+
     if (kyhieu) {
       if (!kyhieuMap[kyhieu]) {
-        kyhieuMap[kyhieu] = { kyhieu, total: 0, mnv: 0 };
+        kyhieuMap[kyhieu] = {
+          kyhieu,
+          total: 0,
+          mnv: 0,
+          latSum: 0,
+          lngSum: 0,
+          coordCount: 0,
+          ttvt: ttvt || '',
+          tovt: tovt || '',
+          ma_kv: ma_kv || ''
+        };
       }
       kyhieuMap[kyhieu].total++;
       if (isMNV) {
         kyhieuMap[kyhieu].mnv++;
       }
+      if (hasValidCoords) {
+        kyhieuMap[kyhieu].latSum += lat;
+        kyhieuMap[kyhieu].lngSum += lng;
+        kyhieuMap[kyhieu].coordCount++;
+      }
     }
 
-    const lat = parseFloat(rawVido);
-    const lng = parseFloat(rawKinhdo);
-    if (!isNaN(lat) && !isNaN(lng) && lat > 8 && lat < 24 && lng > 102 && lng < 115) {
+    if (hasValidCoords) {
       const p = [Math.round(lat * 100000) / 100000, Math.round(lng * 100000) / 100000];
       if (isMNV) {
         heatmapMNV.push([...p, 1.0]);
@@ -150,15 +167,37 @@ async function processData(forceReload = false) {
     }));
 
   // Top 20 Kyhieu
-  const top20Kyhieu = Object.values(kyhieuMap)
-    .sort((a, b) => b.total - a.total)
+  const sortedKyhieuList = Object.values(kyhieuMap)
+    .sort((a, b) => b.total - a.total);
+
+  const top20Kyhieu = sortedKyhieuList
     .slice(0, 20)
     .map((item, index) => ({
       rank: index + 1,
       kyhieu: item.kyhieu,
       total: item.total,
       mnv: item.mnv,
-      rate: item.total > 0 ? ((item.mnv / item.total) * 100).toFixed(1) : '0.0'
+      rate: item.total > 0 ? ((item.mnv / item.total) * 100).toFixed(1) : '0.0',
+      lat: item.coordCount > 0 ? Math.round((item.latSum / item.coordCount) * 100000) / 100000 : null,
+      lng: item.coordCount > 0 ? Math.round((item.lngSum / item.coordCount) * 100000) / 100000 : null,
+      ttvt: item.ttvt,
+      tovt: item.tovt,
+      ma_kv: item.ma_kv
+    }));
+
+  // Kyhieu Hotspots for Map: points with total >= 3 or mnv >= 2 and valid coordinates
+  const kyhieuHotspots = sortedKyhieuList
+    .filter(item => item.coordCount > 0 && (item.total >= 3 || item.mnv >= 2))
+    .map(item => ({
+      kyhieu: item.kyhieu,
+      total: item.total,
+      mnv: item.mnv,
+      rate: item.total > 0 ? ((item.mnv / item.total) * 100).toFixed(1) : '0.0',
+      lat: Math.round((item.latSum / item.coordCount) * 100000) / 100000,
+      lng: Math.round((item.lngSum / item.coordCount) * 100000) / 100000,
+      ttvt: item.ttvt,
+      tovt: item.tovt,
+      ma_kv: item.ma_kv
     }));
 
   cachedStats = {
@@ -171,19 +210,21 @@ async function processData(forceReload = false) {
     top10Tovt,
     top10Kv,
     top20Kyhieu,
+    kyhieuHotspotsCount: kyhieuHotspots.length,
     updatedAt: new Date().toISOString()
   };
 
   cachedHeatmap = {
     mnv: heatmapMNV,
-    all: heatmapAll
+    all: heatmapAll,
+    hotspots: kyhieuHotspots
   };
 
   // Write to disk cache
   try {
     fs.writeFileSync(CACHE_STATS_FILE, JSON.stringify(cachedStats, null, 2), 'utf8');
     fs.writeFileSync(CACHE_HEATMAP_FILE, JSON.stringify(cachedHeatmap), 'utf8');
-    console.log('Saved baohong cache to disk.');
+    console.log('Saved baohong cache to disk with hotspots:', kyhieuHotspots.length);
   } catch (err) {
     console.error('Error saving cache to disk:', err.message);
   }
@@ -197,5 +238,10 @@ module.exports = {
   getHeatmap: async (type = 'mnv', force = false) => {
     const { heatmap } = await processData(force);
     return type === 'all' ? heatmap.all : heatmap.mnv;
+  },
+  getKyhieuHotspots: async (minCount = 3, force = false) => {
+    const { heatmap } = await processData(force);
+    const spots = heatmap.hotspots || [];
+    return spots.filter(s => s.total >= minCount || s.mnv >= 2);
   }
 };

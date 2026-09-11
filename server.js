@@ -535,6 +535,18 @@ app.get('/api/baohong/heatmap', async (req, res) => {
   }
 });
 
+// API: Get Kyhieu Hotspots (markers for high-density areas)
+app.get('/api/baohong/kyhieu-hotspots', async (req, res) => {
+  try {
+    const minCount = parseInt(req.query.min || '3', 10);
+    const spots = await baohongService.getKyhieuHotspots(minCount);
+    res.json({ success: true, count: spots.length, data: spots });
+  } catch (err) {
+    console.error('Error getting kyhieu hotspots:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // API: Refresh Baohong Data
 app.post('/api/baohong/refresh', async (req, res) => {
   try {
