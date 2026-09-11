@@ -1396,3 +1396,65 @@ body {
 .progress-blue {
   background: linear-gradient(to right, #60a5fa, #2563eb);
 }
+
+/* ================= TTVT BOUNDARY & LABEL STYLES ================= */
+.leaflet-tooltip.ttvt-boundary-label {
+  background-color: #fef9c3 !important; /* Vàng nhạt */
+  color: #713f12 !important; /* Chữ nâu sẫm */
+  border: 1px solid #facc15 !important;
+  border-radius: 6px !important;
+  padding: 2px 7px !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18) !important;
+  white-space: nowrap !important;
+  pointer-events: none !important;
+}
+
+.leaflet-tooltip.ttvt-boundary-label::before {
+  border-top-color: #facc15 !important;
+  border-bottom-color: #facc15 !important;
+}
+
+.map-layer-toggle-btn {
+  background: #fff;
+  border: 1.5px solid #2563eb;
+  color: #1d4ed8;
+  font-weight: 600;
+  font-size: 0.78rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.15);
+}
+
+.map-layer-toggle-btn:hover {
+  background: #eff6ff;
+}
+
+.map-layer-toggle-btn.active {
+  background: #2563eb;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+}
+
+/* Boundary Legend Item */
+.legend-item.boundary-legend {
+  border-top: 1px dashed #e2e8f0;
+  margin-top: 6px;
+  padding-top: 6px;
+}
+
+.legend-line-dashed {
+  display: inline-block;
+  width: 22px;
+  height: 0px;
+  border-top: 2.5px dashed #2563eb;
+  margin-right: 6px;
+}
+

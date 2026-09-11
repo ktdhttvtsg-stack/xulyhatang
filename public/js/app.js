@@ -30,7 +30,11 @@ const state = {
   showKyhieuHotspots: true,
   currentHeatType: 'mnv',
   heatRadius: 25,
-  baohongHotspotsData: []
+  baohongHotspotsData: [],
+  overallBoundaryLayer: null,
+  showOverallBoundary: true,
+  baohongBoundaryLayer: null,
+  showBaohongBoundary: true
 };
 
 // ================= INITIALIZATION =================
@@ -414,6 +418,9 @@ function initOverallMap() {
 
   state.overallMarkersLayer = L.featureGroup().addTo(state.overallMap);
   updateOverallMapMarkers(state.items);
+
+  // Load TTVT Boundary
+  loadOverallBoundary();
 }
 
 function updateOverallMapMarkers(items) {
@@ -1509,6 +1516,9 @@ function initBaohongHeatmap() {
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(state.baohongHeatmapMap);
 
+  // Load TTVT Boundary
+  loadHeatmapBoundary();
+
   // Group layer for Kyhieu hotspots markers
   state.baohongHotspotsLayer = L.layerGroup().addTo(state.baohongHeatmapMap);
 
@@ -1737,4 +1747,159 @@ function jumpHeatmap(loc) {
   }
   setTimeout(renderKyhieuHotspotMarkers, 200);
 }
+
+// ================= TTVT BOUNDARY LOGIC (GeoJSON) =================
+let ttvtBoundaryGeoJSON = null;
+
+async function getTtvtBoundaryGeoJSON() {
+  if (ttvtBoundaryGeoJSON) return ttvtBoundaryGeoJSON;
+  try {
+    const res = await fetch('/data/rg-ttvt-full.geojson');
+    if (!res.ok) throw new Error('Không thể tải file ranh giới TTVT');
+    ttvtBoundaryGeoJSON = await res.json();
+    return ttvtBoundaryGeoJSON;
+  } catch (err) {
+    console.error('Lỗi nạp GeoJSON ranh giới TTVT:', err);
+    return null;
+  }
+}
+
+function createTtvtBoundaryLayer(geojsonData) {
+  return L.geoJSON(geojsonData, {
+    style: function(feature) {
+      return {
+        color: '#2563eb',          // Đường ranh giới màu xanh blue
+        dashArray: '7, 6',         // Gạch đứt
+        weight: 2.5,               // Độ dày nét
+        opacity: 0.95,
+        fillColor: 'transparent',  // Nền trong suốt
+        fillOpacity: 0             // Nền trong suốt
+      };
+    },
+    onEachFeature: function(feature, layer) {
+      const name = feature.properties ? (feature.properties.name || feature.properties.name_full || '') : '';
+      if (name) {
+        // Label nền vàng nhạt (cột name)
+        layer.bindTooltip(escapeHtml(name), {
+          permanent: true,
+          direction: 'center',
+          className: 'ttvt-boundary-label'
+        });
+      }
+
+      // Hover interaction & click popup
+      layer.on({
+        mouseover: function(e) {
+          const l = e.target;
+          l.setStyle({
+            weight: 3.5,
+            color: '#1d4ed8',
+            fillColor: '#38bdf8',
+            fillOpacity: 0.08
+          });
+        },
+        mouseout: function(e) {
+          const l = e.target;
+          l.setStyle({
+            weight: 2.5,
+            color: '#2563eb',
+            fillColor: 'transparent',
+            fillOpacity: 0
+          });
+        }
+      });
+
+      const fullName = feature.properties ? (feature.properties.name_full || feature.properties.name || '') : '';
+      const kyhieu = feature.properties ? (feature.properties.ttvt_kyhieu || '') : '';
+      layer.bindPopup(`
+        <div style="font-family: 'Inter', sans-serif; padding: 4px;">
+          <div style="font-weight: 700; color: #1d4ed8; font-size: 13px; margin-bottom: 3px;">
+            🏢 ${escapeHtml(fullName)}
+          </div>
+          <div style="font-size: 11px; color: #475569;">
+            Tên viết tắt: <strong>${escapeHtml(name)}</strong>
+          </div>
+          <div style="font-size: 11px; color: #475569;">
+            Mã ký hiệu TTVT: <strong style="color: #0284c7; font-family: monospace;">${escapeHtml(kyhieu)}</strong>
+          </div>
+        </div>
+      `);
+    }
+  });
+}
+
+async function loadOverallBoundary() {
+  if (!state.overallMap) return;
+  const geojson = await getTtvtBoundaryGeoJSON();
+  if (!geojson) return;
+
+  if (state.overallBoundaryLayer) {
+    state.overallMap.removeLayer(state.overallBoundaryLayer);
+  }
+
+  state.overallBoundaryLayer = createTtvtBoundaryLayer(geojson);
+  if (state.showOverallBoundary) {
+    state.overallBoundaryLayer.addTo(state.overallMap);
+    if (state.overallMarkersLayer) {
+      state.overallMarkersLayer.bringToFront();
+    }
+  }
+}
+
+function toggleOverallBoundary() {
+  state.showOverallBoundary = !state.showOverallBoundary;
+  const btn = document.getElementById('btnToggleOverallBoundary');
+  if (btn) {
+    if (state.showOverallBoundary) btn.classList.add('active');
+    else btn.classList.remove('active');
+  }
+
+  if (state.overallBoundaryLayer && state.overallMap) {
+    if (state.showOverallBoundary) {
+      state.overallBoundaryLayer.addTo(state.overallMap);
+      if (state.overallMarkersLayer) state.overallMarkersLayer.bringToFront();
+    } else {
+      state.overallMap.removeLayer(state.overallBoundaryLayer);
+    }
+  }
+  showToast(state.showOverallBoundary ? 'Đã bật ranh giới TTVT trên bản đồ hạ tầng' : 'Đã ẩn ranh giới TTVT', 'info');
+}
+
+async function loadHeatmapBoundary() {
+  if (!state.baohongHeatmapMap) return;
+  const geojson = await getTtvtBoundaryGeoJSON();
+  if (!geojson) return;
+
+  if (state.baohongBoundaryLayer) {
+    state.baohongHeatmapMap.removeLayer(state.baohongBoundaryLayer);
+  }
+
+  state.baohongBoundaryLayer = createTtvtBoundaryLayer(geojson);
+  if (state.showBaohongBoundary) {
+    state.baohongBoundaryLayer.addTo(state.baohongHeatmapMap);
+    if (state.baohongHotspotsLayer) {
+      state.baohongHotspotsLayer.bringToFront();
+    }
+  }
+}
+
+function toggleHeatmapBoundary() {
+  state.showBaohongBoundary = !state.showBaohongBoundary;
+  const btn = document.getElementById('btnToggleHeatmapBoundary');
+  if (btn) {
+    if (state.showBaohongBoundary) btn.classList.add('active');
+    else btn.classList.remove('active');
+  }
+
+  if (state.baohongBoundaryLayer && state.baohongHeatmapMap) {
+    if (state.showBaohongBoundary) {
+      state.baohongBoundaryLayer.addTo(state.baohongHeatmapMap);
+      if (state.baohongHotspotsLayer) state.baohongHotspotsLayer.bringToFront();
+    } else {
+      state.baohongHeatmapMap.removeLayer(state.baohongBoundaryLayer);
+    }
+  }
+  showToast(state.showBaohongBoundary ? 'Đã bật ranh giới TTVT trên bản đồ nhiệt' : 'Đã ẩn ranh giới TTVT', 'info');
+}
+
 

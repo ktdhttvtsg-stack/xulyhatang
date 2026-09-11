@@ -201,7 +201,12 @@
     <div id="mapViewContainer" class="map-view-container">
       <div id="overallMap"></div>
       <div class="map-legend">
-        <div class="legend-title">Trạng thái xử lý</div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+          <div class="legend-title" style="margin: 0;">Lớp bản đồ & Trạng thái</div>
+          <button class="map-layer-toggle-btn active" id="btnToggleOverallBoundary" onclick="toggleOverallBoundary()" title="Bật/Tắt hiển thị ranh giới TTVT">
+            🗺️ Ranh giới TTVT
+          </button>
+        </div>
         <div class="legend-item">
           <span class="legend-dot" style="background: #ef4444;"></span>
           <span>Chưa xử lý (Khẩn/Cảnh báo)</span>
@@ -213,6 +218,10 @@
         <div class="legend-item">
           <span class="legend-dot" style="background: #10b981;"></span>
           <span>Đã hoàn thành</span>
+        </div>
+        <div class="legend-item boundary-legend">
+          <span class="legend-line-dashed"></span>
+          <span>Ranh giới TTVT (nhãn vàng nhạt)</span>
         </div>
       </div>
     </div>
@@ -301,10 +310,13 @@
               <button class="btn btn-sm btn-outline-chip" onclick="jumpHeatmap('vt')">BR-VT</button>
             </div>
 
-            <!-- Toggle Show Kyhieu Labels/Pins -->
-            <div class="heatmap-kyhieu-toggle-group">
+            <!-- Toggle Show Kyhieu Labels/Pins & Boundary -->
+            <div class="heatmap-kyhieu-toggle-group" style="gap: 6px;">
               <button class="btn btn-sm btn-kyhieu-toggle active" id="btnToggleKyhieuLabels" onclick="toggleKyhieuHotspots()">
                 🏷️ Hiển thị Ký hiệu mật độ cao (<span id="kyhieuHotspotsCountDisplay">0</span>)
+              </button>
+              <button class="btn btn-sm map-layer-toggle-btn active" id="btnToggleHeatmapBoundary" onclick="toggleHeatmapBoundary()">
+                🗺️ Ranh giới TTVT
               </button>
             </div>
           </div>
